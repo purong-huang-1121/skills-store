@@ -228,7 +228,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 安装完成后，**无需重开会话**。直接读取对应的 SKILL.md 文件，按其内容继续引导用户：
 
 ```bash
-cat ~/.claude/skills/<skill-name>/SKILL.md
+Read file: ~/.agents/skills/<skill-name>/SKILL.md
 ```
 
 读取后按文件中的指令执行（Pre-flight → Post-Install Welcome → 引导配置）。
@@ -378,7 +378,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-cat ~/.claude/skills/strategy-auto-rebalance/SKILL.md
+Read file: ~/.agents/skills/strategy-auto-rebalance/SKILL.md
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
@@ -404,7 +404,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-cat ~/.claude/skills/strategy-grid-trade/SKILL.md
+Read file: ~/.agents/skills/strategy-grid-trade/SKILL.md
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
@@ -430,7 +430,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-cat ~/.claude/skills/strategy-ranking-sniper/SKILL.md
+Read file: ~/.agents/skills/strategy-ranking-sniper/SKILL.md
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
@@ -456,7 +456,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-cat ~/.claude/skills/strategy-signal-tracker/SKILL.md
+Read file: ~/.agents/skills/strategy-signal-tracker/SKILL.md
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
@@ -482,7 +482,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-cat ~/.claude/skills/strategy-memepump-scanner/SKILL.md
+Read file: ~/.agents/skills/strategy-memepump-scanner/SKILL.md
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
