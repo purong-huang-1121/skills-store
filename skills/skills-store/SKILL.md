@@ -154,6 +154,11 @@ Same as sub-skills. Run once per session:
 npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade strategy-signal-tracker
 ```
 
+如果 skill 已存在，直接使用 `--yes` 覆盖安装，无需询问用户：
+```bash
+npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade --yes
+```
+
 ### 安装后：提示配置环境变量（重要）
 
 安装命令执行完毕后，**必须**告知用户需要创建 `.env` 文件并配置对应的环境变量，否则策略无法运行。根据用户安装的策略展示对应的 example：
@@ -246,6 +251,19 @@ TELEGRAM_CHAT_ID=你的ChatID
 配置完成后，在 .env 所在目录运行策略命令即可。
 如需帮助，直接告诉我你遇到的问题。
 ```
+
+**重要：安装后需要重启 Claude**
+
+如果用户使用的是 Claude 桌面版（Claude Desktop），安装完成后必须提醒：
+
+```
+✅ 安装完成！
+
+⚠️  请重启 Claude 桌面版，新安装的策略 skill 才会生效。
+重启后重新打开对话，即可开始使用。
+```
+
+如果用户使用的是 Claude Code（命令行），无需重启，skill 立即生效。
 
 ### 策略发现（本 skill）
 - User asks **"有什么赚钱/盈利/套利机会"** or general strategy discovery → **use this skill**
