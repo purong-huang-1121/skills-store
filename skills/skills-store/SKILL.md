@@ -223,18 +223,16 @@ TELEGRAM_CHAT_ID=你的ChatID
 如需帮助，直接告诉我你遇到的问题。
 ```
 
-**重要：安装后需要重启 Claude**
+**重要：安装后需要新建对话**
 
-如果用户使用的是 Claude 桌面版（Claude Desktop），安装完成后必须提醒：
+无论是 Claude 桌面版还是 Claude Code（命令行），新安装的 Skill 在**当前会话**中不会生效。安装完成后必须提醒：
 
 ```
 ✅ 安装完成！
 
-⚠️  请重启 Claude 桌面版，新安装的策略 skill 才会生效。
-重启后重新打开对话，即可开始使用。
+⚠️  请重新开始一个新对话，新安装的策略 Skill 才会生效。
+新对话中直接说你想用的策略，Skill 会自动引导你完成配置和启动。
 ```
-
-如果用户使用的是 Claude Code（命令行），无需重启，skill 立即生效。
 
 ### 策略发现 / 能力查询（本 skill）
 - User asks **"有什么赚钱/盈利/套利机会"**, **"你能做什么"**, **"有什么功能"**, **"有什么能力"** or any discovery query → **use this skill → Entry Point: Strategy Discovery**
@@ -376,11 +374,21 @@ curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Step 3：交给策略 Skill 处理
+### Step 3：完成安装，提示用户
 
-安装完成后，**策略 `strategy-auto-rebalance` 的 Skill 会自动接管**，引导用户完成链选择、资金配置、启动等全部流程。
+安装完成后，向用户展示：
 
-**不要在此 skill 里继续执行任何策略命令。**
+```
+✅ strategy-auto-rebalance 安装完成！
+
+下一步：
+1. 配置环境变量（见上方 .env 示例，填写 EVM_PRIVATE_KEY）
+2. 重新开始一个新对话 —— 策略 Skill 将自动加载并引导你完成启动配置
+
+需要帮助配置 .env 的话，直接告诉我。
+```
+
+**不要在此 skill 里尝试运行 strategy-auto-rebalance 命令或调用策略 Skill，当前会话中新安装的 Skill 尚未加载。**
 
 
 ## Flow B: ETH/USDC 网格交易
@@ -398,11 +406,21 @@ curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Step 3：交给策略 Skill 处理
+### Step 3：完成安装，提示用户
 
-安装完成后，**策略 `strategy-grid-trade` 的 Skill 会自动接管**，引导用户完成链选择、资金配置、启动等全部流程。
+安装完成后，向用户展示：
 
-**不要在此 skill 里继续执行任何策略命令。**
+```
+✅ strategy-grid-trade 安装完成！
+
+下一步：
+1. 配置环境变量（见上方 .env 示例，填写 OKX_API_KEY / EVM_PRIVATE_KEY）
+2. 重新开始一个新对话 —— 策略 Skill 将自动加载并引导你完成启动配置
+
+需要帮助配置 .env 的话，直接告诉我。
+```
+
+**不要在此 skill 里尝试运行 strategy-grid 命令或调用策略 Skill，当前会话中新安装的 Skill 尚未加载。**
 
 
 ## Flow D: SOL 涨幅榜狙击 (Ranking Sniper)
@@ -420,11 +438,21 @@ curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Step 3：交给策略 Skill 处理
+### Step 3：完成安装，提示用户
 
-安装完成后，**策略 `strategy-ranking-sniper` 的 Skill 会自动接管**，引导用户完成链选择、资金配置、启动等全部流程。
+安装完成后，向用户展示：
 
-**不要在此 skill 里继续执行任何策略命令。**
+```
+✅ strategy-ranking-sniper 安装完成！
+
+下一步：
+1. 配置环境变量（见上方 .env 示例，填写 SOLANA_PRIVATE_KEY / OKX_API_KEY）
+2. 重新开始一个新对话 —— 策略 Skill 将自动加载并引导你完成启动配置
+
+需要帮助配置 .env 的话，直接告诉我。
+```
+
+**不要在此 skill 里尝试运行 strategy-ranking-sniper 命令或调用策略 Skill，当前会话中新安装的 Skill 尚未加载。**
 
 
 ## Flow E: SOL 聪明钱跟单 (Signal Tracker)
@@ -442,11 +470,21 @@ curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Step 3：交给策略 Skill 处理
+### Step 3：完成安装，提示用户
 
-安装完成后，**策略 `strategy-signal-tracker` 的 Skill 会自动接管**，引导用户完成链选择、资金配置、启动等全部流程。
+安装完成后，向用户展示：
 
-**不要在此 skill 里继续执行任何策略命令。**
+```
+✅ strategy-signal-tracker 安装完成！
+
+下一步：
+1. 配置环境变量（见上方 .env 示例，填写 SOLANA_PRIVATE_KEY / OKX_API_KEY）
+2. 重新开始一个新对话 —— 策略 Skill 将自动加载并引导你完成启动配置
+
+需要帮助配置 .env 的话，直接告诉我。
+```
+
+**不要在此 skill 里尝试运行 strategy-signal-tracker 命令或调用策略 Skill，当前会话中新安装的 Skill 尚未加载。**
 
 
 ## Flow F: SOL Memepump 扫描 (Memepump Scanner)
@@ -464,9 +502,19 @@ curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-### Step 3：交给策略 Skill 处理
+### Step 3：完成安装，提示用户
 
-安装完成后，**策略 `strategy-memepump-scanner` 的 Skill 会自动接管**，引导用户完成链选择、资金配置、启动等全部流程。
+安装完成后，向用户展示：
 
-**不要在此 skill 里继续执行任何策略命令。**
+```
+✅ strategy-memepump-scanner 安装完成！
+
+下一步：
+1. 配置环境变量（见上方 .env 示例，填写 SOLANA_PRIVATE_KEY / OKX_API_KEY）
+2. 重新开始一个新对话 —— 策略 Skill 将自动加载并引导你完成启动配置
+
+需要帮助配置 .env 的话，直接告诉我。
+```
+
+**不要在此 skill 里尝试运行 strategy-memepump-scanner 命令或调用策略 Skill，当前会话中新安装的 Skill 尚未加载。**
 
