@@ -291,10 +291,6 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 特点：自适应波动率、风控熔断、仓位限制、失败重试                  │
 
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ═══════════════ Solana Meme 策略（依赖线上 skills-store）══════════════ │
-│                                                                     │
-├─────────────────────────────────────────────────────────────────────┤
 │  D. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
 │     分类：MEME交易  |  作者：Suning Yao (suning.yao@okg.com)        │
 │                                                                     │
