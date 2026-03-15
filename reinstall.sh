@@ -131,46 +131,42 @@ echo "=== Step 7: 配置 .env 环境变量 ==="
 ENV_FILE="$HOME/.cargo/bin/.env"
 mkdir -p "$HOME/.cargo/bin"
 
-if [ -f "$ENV_FILE" ]; then
-  echo "（$ENV_FILE 已存在，跳过配置）"
-else
-  echo "请依次输入环境变量（不需要的直接回车跳过）："
-  echo ""
-
-  printf "EVM_PRIVATE_KEY（EVM 钱包私钥，Aave/Morpho/网格交易必填）: "
-  read -r val_evm_pk
-  printf "OKX_API_KEY（OKX API Key，网格/跟单/扫描策略必填）: "
-  read -r val_okx_key
-  printf "OKX_SECRET_KEY: "
-  read -r val_okx_secret
-  printf "OKX_PASSPHRASE: "
-  read -r val_okx_pass
-  printf "SOLANA_PRIVATE_KEY（Solana 钱包私钥，Solana 策略必填）: "
-  read -r val_sol_pk
-  printf "TELEGRAM_BOT_TOKEN（可选）: "
-  read -r val_tg_token
-  printf "TELEGRAM_CHAT_ID（可选）: "
-  read -r val_tg_chat
-
-  cat > "$ENV_FILE" <<EOF
+if [ ! -f "$ENV_FILE" ]; then
+  cat > "$ENV_FILE" <<'EOF'
 # skills-store 环境变量配置
+# 填写需要的变量后保存关闭即可，不需要的留空
 
 # EVM 钱包私钥（Aave / Morpho / Grid Trading / Auto-Rebalance 必填）
-EVM_PRIVATE_KEY=${val_evm_pk}
+EVM_PRIVATE_KEY=
 
 # OKX API（Grid Trading / Ranking Sniper / Signal Tracker / Memepump 必填）
-OKX_API_KEY=${val_okx_key}
-OKX_SECRET_KEY=${val_okx_secret}
-OKX_PASSPHRASE=${val_okx_pass}
+OKX_API_KEY=
+OKX_SECRET_KEY=
+OKX_PASSPHRASE=
 
 # Solana 钱包私钥（Ranking Sniper / Signal Tracker / Memepump 必填）
-SOLANA_PRIVATE_KEY=${val_sol_pk}
+SOLANA_PRIVATE_KEY=
 
-# Telegram 通知（可选）
-TELEGRAM_BOT_TOKEN=${val_tg_token}
-TELEGRAM_CHAT_ID=${val_tg_chat}
+# Telegram 通知（可选，所有策略支持）
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
 EOF
-  echo "✅ 已保存到 $ENV_FILE"
+  echo "✅ 已创建 $ENV_FILE"
+else
+  echo "（$ENV_FILE 已存在，直接打开编辑）"
+fi
+
+echo "正在打开编辑器，填写完成后保存关闭，脚本自动继续..."
+if command -v code >/dev/null 2>&1; then
+  code --wait "$ENV_FILE"
+elif [ "$(uname -s)" = "Darwin" ]; then
+  open -e "$ENV_FILE"
+  echo "请在 TextEdit 中填写完成后保存关闭，然后按回车继续..."
+  read -r _
+else
+  open "$ENV_FILE" 2>/dev/null || xdg-open "$ENV_FILE" 2>/dev/null || true
+  echo "请填写完成后保存关闭，然后按回车继续..."
+  read -r _
 fi
 
 echo ""
