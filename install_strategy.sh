@@ -118,7 +118,23 @@ install_binary() {
   tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' EXIT
 
-  curl -sSfL "$url" -o "$tmpdir/$binary_name"
+  # Download with retries (handles curl exit 18 partial transfer)
+  max_attempts=3
+  attempt=0
+  while [ $attempt -lt $max_attempts ]; do
+    attempt=$((attempt + 1))
+    if curl -sSfL --retry 2 --retry-delay 3 "$url" -o "$tmpdir/$binary_name"; then
+      break
+    fi
+    if [ $attempt -lt $max_attempts ]; then
+      echo "Download failed (attempt $attempt/$max_attempts), retrying in 5s..."
+      sleep 5
+      rm -f "$tmpdir/$binary_name"
+    else
+      echo "Error: download failed after $max_attempts attempts" >&2
+      exit 1
+    fi
+  done
   curl -sSfL "$checksums_url" -o "$tmpdir/checksums.txt"
 
   expected_hash=$(grep "$binary_name" "$tmpdir/checksums.txt" | awk '{print $1}')
