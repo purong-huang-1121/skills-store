@@ -70,6 +70,8 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -77,12 +79,13 @@ jobs:
           merge-multiple: true
 
       - name: Generate checksums
-        run: sha256sum * > checksums.txt
+        run: sha256sum plugin-store-* strategy-* > checksums.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            *
+            plugin-store-*
+            strategy-*
             checksums.txt
           generate_release_notes: true
