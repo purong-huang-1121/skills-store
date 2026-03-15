@@ -92,6 +92,26 @@ echo ""
 echo "=== Step 5: 安装 skills-store skill ==="
 
 npx skills add purong-huang-1121/skills-store --skill skills-store --yes
+SKILLS_EXIT=$?
+
+if [ $SKILLS_EXIT -ne 0 ]; then
+  echo "❌ skills add 命令失败（exit $SKILLS_EXIT），请检查网络后重试" >&2
+  exit 1
+fi
+
+# 验证 skill 文件确实已写入磁盘
+SKILL_FILE_1="$HOME/.agents/skills/skills-store/SKILL.md"
+SKILL_FILE_2="$HOME/.claude/skills/skills-store/SKILL.md"
+if [ ! -f "$SKILL_FILE_1" ] && [ ! -f "$SKILL_FILE_2" ]; then
+  echo "⚠️  skill 文件未找到，等待写入..."
+  sleep 2
+  if [ ! -f "$SKILL_FILE_1" ] && [ ! -f "$SKILL_FILE_2" ]; then
+    echo "❌ skill 安装可能未完成，请重新运行脚本" >&2
+    exit 1
+  fi
+fi
+
+echo "✅ skills-store skill 安装完成"
 
 echo ""
 echo "=== Step 6: 配置 .env 环境变量 ==="
