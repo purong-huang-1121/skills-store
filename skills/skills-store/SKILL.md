@@ -154,6 +154,99 @@ Same as sub-skills. Run once per session:
 npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade strategy-signal-tracker
 ```
 
+### 安装后：提示配置环境变量（重要）
+
+安装命令执行完毕后，**必须**告知用户需要创建 `.env` 文件并配置对应的环境变量，否则策略无法运行。根据用户安装的策略展示对应的 example：
+
+---
+
+**USDC 智能调仓（strategy-auto-rebalance）**
+```bash
+# ~/.env 或策略运行目录下的 .env
+EVM_PRIVATE_KEY=0x你的私钥
+
+# 可选：Telegram 通知
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**ETH/USDC 网格交易（strategy-grid-trade）**
+```bash
+# OKX API（用于报价和交易执行）
+OKX_API_KEY=你的APIKey
+OKX_SECRET_KEY=你的SecretKey
+OKX_PASSPHRASE=你的Passphrase
+
+# EVM 钱包（Base 链）
+EVM_PRIVATE_KEY=0x你的私钥
+
+# 可选
+BASE_RPC_URL=你的自定义RPC（默认使用公共节点）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL 涨幅榜狙击（strategy-ranking-sniper）**
+```bash
+# Solana 钱包
+SOLANA_PRIVATE_KEY=你的Base58私钥
+
+# OKX API
+OKX_API_KEY=你的APIKey
+OKX_SECRET_KEY=你的SecretKey
+OKX_PASSPHRASE=你的Passphrase
+
+# 可选
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL 聪明钱跟单（strategy-signal-tracker）**
+```bash
+# Solana 钱包
+SOLANA_PRIVATE_KEY=你的Base58私钥
+
+# OKX API
+OKX_API_KEY=你的APIKey
+OKX_SECRET_KEY=你的SecretKey
+OKX_PASSPHRASE=你的Passphrase
+
+# 可选
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL Memepump 扫描（strategy-memepump-scanner）**
+```bash
+# Solana 钱包
+SOLANA_PRIVATE_KEY=你的Base58私钥
+
+# OKX API
+OKX_API_KEY=你的APIKey
+OKX_SECRET_KEY=你的SecretKey
+OKX_PASSPHRASE=你的Passphrase
+
+# 可选
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+展示完对应的 `.env` 示例后，提示用户：
+```
+配置完成后，在 .env 所在目录运行策略命令即可。
+如需帮助，直接告诉我你遇到的问题。
+```
+
 ### 策略发现（本 skill）
 - User asks **"有什么赚钱/盈利/套利机会"** or general strategy discovery → **use this skill**
 

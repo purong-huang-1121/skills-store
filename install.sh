@@ -218,8 +218,8 @@ main() {
   latest_ver=$(normalize_tag "$tag")
 
   if [ -n "$local_ver" ]; then
-    semver_cmp "$local_ver" "$latest_ver"
-    cmp_result=$?
+    semver_cmp "$local_ver" "$latest_ver" || cmp_result=$?
+    cmp_result=${cmp_result:-0}
     if [ "$cmp_result" -eq 0 ]; then
       echo "${BINARY} ${local_ver} is already up to date."
       write_cache

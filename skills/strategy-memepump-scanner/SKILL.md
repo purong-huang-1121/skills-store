@@ -1,8 +1,6 @@
 ---
 name: strategy-memepump-scanner
 description: "Use when the user asks about meme token scanning, pump.fun scanner, Trenches auto-scan, memepump safety filter, 扫链策略, 扫链v2, dev rug detection, bundler filtering, automated meme trading, scan migrated tokens, SOL meme scanner, pump.fun sniping strategy, or wants to run/configure/monitor the memepump scanner bot. Covers: safety-filtered scanning of MIGRATED pump.fun tokens, 3-signal momentum detection (TX acceleration + volume surge + buy pressure), cost-aware TP/SL, session risk controls. Do NOT use for manual token lookup — use okx-dex-trenches. Do NOT use for grid trading — use strategy-grid-trade."
-version: 2.4.1
-updated: 2026-03-13
 license: Apache-2.0
 metadata:
   author: Victor Lee (victor.lee@okg.com)

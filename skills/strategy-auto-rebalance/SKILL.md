@@ -117,11 +117,11 @@ Key points to verify:
 
 ## Skill Routing
 
-- For single-protocol Aave operations → use `dapp-aave`
-- For Morpho vault operations → use `dapp-morpho` (CLI: `plugin-store morpho`)
+- For single-protocol Aave operations → use `plugin-store aave`
+- For Morpho vault operations → use `plugin-store morpho`
 - For grid trading → use `strategy-grid-trade`
-- For prediction markets → use `dapp-polymarket` / `dapp-kalshi`
-- For perpetual trading → use `dapp-hyperliquid`
+- For prediction markets → use `plugin-store polymarket` / `plugin-store kalshi`
+- For perpetual trading → use `plugin-store hyperliquid`
 
 ## Authentication
 
@@ -137,7 +137,7 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
 
-All env vars can be set in `cli/.env` (auto-loaded via dotenvy).
+All env vars can be set in `.env` in the current working directory (auto-loaded via dotenvy).
 
 ## Multi-Chain Support
 

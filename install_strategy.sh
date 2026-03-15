@@ -36,7 +36,8 @@ if [ -z "$STRATEGY" ]; then
   exit 1
 fi
 
-CACHE_FILE="$CACHE_BASE/last_check_${STRATEGY//-/_}"
+CACHE_KEY=$(echo "$STRATEGY" | tr '-' '_')
+CACHE_FILE="$CACHE_BASE/last_check_${CACHE_KEY}"
 CACHE_TTL=43200  # 12 hours
 
 get_target() {
@@ -211,8 +212,8 @@ main() {
   latest_ver=$(normalize_tag "$tag")
 
   if [ -n "$local_ver" ]; then
-    semver_cmp "$local_ver" "$latest_ver"
-    cmp_result=$?
+    semver_cmp "$local_ver" "$latest_ver" || cmp_result=$?
+    cmp_result=${cmp_result:-0}
     if [ "$cmp_result" -eq 0 ]; then
       echo "${STRATEGY} ${local_ver} is already up to date."
       write_cache; return 0

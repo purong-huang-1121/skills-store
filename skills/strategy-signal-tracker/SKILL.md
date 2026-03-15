@@ -1,8 +1,6 @@
 ---
 name: strategy-signal-tracker
 description: "Use when the user asks about smart money signal trading, 聪明钱策略, KOL following, whale tracking, signal bot, 信号策略, 跟单策略, 同车地址, cost-aware TP/SL, session risk controls, or wants to run/configure/monitor the signal tracker bot. Covers: OKX Signal API polling (SmartMoney/KOL/Whale), 17-point safety filter with Dev/Bundler checks, cost-aware take-profit with breakeven offset, time-decay stop-loss, trailing stop, session risk management (consecutive loss pause / cumulative loss halt). Do NOT use for meme token scanning — use strategy-memepump-scanner. Do NOT use for grid trading — use strategy-grid-trade. Do NOT use for manual signal lookup — use okx-dex-signal."
-version: 3.0.0
-updated: 2026-03-14
 license: Apache-2.0
 metadata:
   authors:
