@@ -47,7 +47,21 @@ metadata:
 
 # On-Chain Strategy Composer
 
-Helps users discover and launch built-in automated strategies. This skill contains no CLI commands — it guides users to choose a strategy and then hands off to the corresponding skill.
+> **⚠️ MANDATORY FIRST STEP — 必须最先执行，任何回复之前**
+> 
+> 本 skill 加载后，**立即**运行以下命令检查 `skills-store` 二进制是否安装，然后才能做任何其他事情：
+> 
+> ```bash
+> which skills-store
+> ```
+> 
+> - **未找到** → 先安装，安装完再继续：
+>   ```bash
+>   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+>   ```
+> - **已安装** → 继续。
+> 
+> **不得跳过此步骤。不得在安装完成前回复用户任何内容。**
 
 ---
 
@@ -66,24 +80,7 @@ Activate this section when ANY of the following is true:
 
 ## Pre-flight Checks
 
-**Run immediately when this skill is loaded** — including capability/discovery queries ("你能做什么", "有什么机会" etc.) — not just before CLI commands. Do not echo routine output to the user.
-
-```bash
-which skills-store
-```
-
-- **Not found** → install:
-  ```bash
-  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-  ```
-
-- **Check for updates**: Read `~/.cargo/bin/.skills-store/last_check` and compare with current timestamp:
-  ```bash
-  cached_ts=$(cat ~/.cargo/bin/.skills-store/last_check 2>/dev/null || true)
-  now=$(date +%s)
-  ```
-  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-  - Otherwise, run the installer to check for updates.
+→ 见文件顶部 MANDATORY FIRST STEP，已在 skill 加载时执行。
 
 ## Skill Routing
 
@@ -401,19 +398,19 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 ### Step Pre-flight — 确保 strategy-auto-rebalance 已安装
 
-在执行任何步骤前，先检查二进制：
+> **⚠️ 必须最先执行。安装完成前不得向用户提问。**
 
 ```bash
 which strategy-auto-rebalance
 ```
 
-- **未找到** → 安装：
+- **未找到** → 安装（完成后再继续下一步）：
   ```bash
   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance
   ```
 - **已安装** → 继续。
 
-> ⚠️ `npx skills add` 只安装 AI 指令文件，**不会**安装 `strategy-auto-rebalance` 二进制。
+> `npx skills add` 只安装 AI 指令文件，**不安装**二进制，必须用上面命令单独安装。
 
 ### Step A1: Ask for chain
 
@@ -484,19 +481,19 @@ strategy-auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 
 ### Step B0: Pre-flight — 确保 strategy-grid 已安装
 
-在执行任何步骤前，先检查二进制：
+> **⚠️ 必须最先执行。安装完成前不得向用户提问。**
 
 ```bash
 which strategy-grid
 ```
 
-- **未找到** → 安装：
+- **未找到** → 安装（完成后再继续下一步）：
   ```bash
   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-grid
   ```
 - **已安装** → 继续。
 
-> ⚠️ `npx skills add` 只安装 AI 指令文件，**不会**安装 `strategy-grid` 二进制。
+> `npx skills add` 只安装 AI 指令文件，**不安装**二进制，必须用上面命令单独安装。
 
 ### Step B1: Confirm chain
 
@@ -788,19 +785,19 @@ Alerts:
 
 ### Step Pre-flight — 确保 strategy-ranking-sniper 已安装
 
-在执行任何步骤前，先检查二进制：
+> **⚠️ 必须最先执行。安装完成前不得向用户提问。**
 
 ```bash
 which strategy-ranking-sniper
 ```
 
-- **未找到** → 安装：
+- **未找到** → 安装（完成后再继续下一步）：
   ```bash
   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-ranking-sniper
   ```
 - **已安装** → 继续。
 
-> ⚠️ `npx skills add` 只安装 AI 指令文件，**不会**安装 `strategy-ranking-sniper` 二进制。
+> `npx skills add` 只安装 AI 指令文件，**不安装**二进制，必须用上面命令单独安装。
 
 ### 原理
 
@@ -861,19 +858,19 @@ strategy-ranking-sniper start
 
 ### Step Pre-flight — 确保 strategy-signal-tracker 已安装
 
-在执行任何步骤前，先检查二进制：
+> **⚠️ 必须最先执行。安装完成前不得向用户提问。**
 
 ```bash
 which strategy-signal-tracker
 ```
 
-- **未找到** → 安装：
+- **未找到** → 安装（完成后再继续下一步）：
   ```bash
   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
   ```
 - **已安装** → 继续。
 
-> ⚠️ `npx skills add` 只安装 AI 指令文件，**不会**安装 `strategy-signal-tracker` 二进制。
+> `npx skills add` 只安装 AI 指令文件，**不安装**二进制，必须用上面命令单独安装。
 
 ### 原理
 
@@ -943,19 +940,19 @@ strategy-signal-tracker start
 
 ### Step Pre-flight — 确保 strategy-memepump-scanner 已安装
 
-在执行任何步骤前，先检查二进制：
+> **⚠️ 必须最先执行。安装完成前不得向用户提问。**
 
 ```bash
 which strategy-memepump-scanner
 ```
 
-- **未找到** → 安装：
+- **未找到** → 安装（完成后再继续下一步）：
   ```bash
   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
   ```
 - **已安装** → 继续。
 
-> ⚠️ `npx skills add` 只安装 AI 指令文件，**不会**安装 `strategy-memepump-scanner` 二进制。
+> `npx skills add` 只安装 AI 指令文件，**不安装**二进制，必须用上面命令单独安装。
 
 ### 原理
 
