@@ -74,7 +74,7 @@ which skills-store
 
 - **Not found** → install:
   ```bash
-  curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install.sh | sh
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
   ```
 
 - **Check for updates**: Read `~/.cargo/bin/.skills-store/last_check` and compare with current timestamp:
@@ -109,20 +109,20 @@ which skills-store
 
 | 用户意图 | 执行命令 |
 |---|---|
-| USDC 智能调仓 / auto-rebalance | `npx skills add ganlinux/skills-store --skill strategy-auto-rebalance` |
-| ETH/USDC 网格交易 / grid | `npx skills add ganlinux/skills-store --skill strategy-grid-trade` |
-| SOL 涨幅榜狙击 / ranking sniper | `npx skills add ganlinux/skills-store --skill strategy-ranking-sniper` |
-| SOL 聪明钱跟单 / signal tracker | `npx skills add ganlinux/skills-store --skill strategy-signal-tracker` |
-| SOL Memepump 扫描 / memepump | `npx skills add ganlinux/skills-store --skill strategy-memepump-scanner` |
+| USDC 智能调仓 / auto-rebalance | `npx skills add purong-huang-1121/skills-store --skill strategy-auto-rebalance` |
+| ETH/USDC 网格交易 / grid | `npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade` |
+| SOL 涨幅榜狙击 / ranking sniper | `npx skills add purong-huang-1121/skills-store --skill strategy-ranking-sniper` |
+| SOL 聪明钱跟单 / signal tracker | `npx skills add purong-huang-1121/skills-store --skill strategy-signal-tracker` |
+| SOL Memepump 扫描 / memepump | `npx skills add purong-huang-1121/skills-store --skill strategy-memepump-scanner` |
 
 如果用户想安装**多个策略**，用空格分隔 skill 名称：
 ```bash
-npx skills add ganlinux/skills-store --skill strategy-grid-trade strategy-signal-tracker
+npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade strategy-signal-tracker
 ```
 
 如果 skill 已存在，直接使用 `--yes` 覆盖安装，无需询问用户：
 ```bash
-npx skills add ganlinux/skills-store --skill strategy-grid-trade --yes
+npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade --yes
 ```
 
 ### 安装后：提示配置环境变量（重要）

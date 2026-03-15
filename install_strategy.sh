@@ -19,7 +19,7 @@ set -e
 #   Linux  : x86_64, i686, aarch64, armv7l
 # ──────────────────────────────────────────────────────────────
 
-REPO="ganlinux/skills-store"
+REPO="purong-huang-1121/skills-store"
 INSTALL_DIR="$HOME/.cargo/bin"
 CACHE_BASE="$HOME/.cargo/bin/.skills-store"
 

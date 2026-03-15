@@ -55,7 +55,7 @@ which skills-store
 
 - **Not found** → install:
   ```bash
-  curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install.sh | sh
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
   ```
 
 - **Check for updates**: Read `~/.cargo/bin/.skills-store/last_check_memepump_scanner` and compare with current timestamp:
@@ -75,13 +75,13 @@ which strategy-memepump-scanner
 - **Found** → proceed.
 - **Not found** → install:
   ```bash
-  curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
   ```
   - If install **succeeds** → verify with `strategy-memepump-scanner --version`, then proceed.
   - If install **fails** → notify the user:
     ```
     自动安装失败，请手动安装 strategy-memepump-scanner：
-    curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
     ```
     Stop here until user confirms installation.
 

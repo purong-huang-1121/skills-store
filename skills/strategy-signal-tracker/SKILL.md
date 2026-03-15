@@ -57,7 +57,7 @@ which skills-store
 
 - **Not found** → install:
   ```bash
-  curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install.sh | sh
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
   ```
 
 - **Check for updates**: Read `~/.cargo/bin/.skills-store/last_check_signal_tracker` and compare with current timestamp:
@@ -77,13 +77,13 @@ which strategy-signal-tracker
 - **Found** → proceed.
 - **Not found** → install:
   ```bash
-  curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
   ```
   - If install **succeeds** → verify with `strategy-signal-tracker --version`, then proceed.
   - If install **fails** → notify the user:
     ```
     自动安装失败，请手动安装 strategy-signal-tracker：
-    curl -sSL https://raw.githubusercontent.com/ganlinux/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
     ```
     Stop here until user confirms installation.
 
