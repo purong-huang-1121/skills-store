@@ -137,7 +137,7 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
 
-All env vars can be set in `.env` in the current working directory (auto-loaded via dotenvy).
+All env vars can be set in `~/.cargo/bin/.env` (auto-loaded from the binary's directory via dotenvy).
 
 ## Multi-Chain Support
 

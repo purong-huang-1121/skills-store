@@ -20,8 +20,8 @@ set -e
 # ──────────────────────────────────────────────────────────────
 
 REPO="purong-huang-1121/skills-store"
-INSTALL_DIR="$HOME/.local/bin"
-CACHE_BASE="$INSTALL_DIR/.plugin-store"
+INSTALL_DIR="$HOME/.cargo/bin"
+CACHE_BASE="$HOME/.local/bin/.plugin-store"
 
 STRATEGY="$1"
 

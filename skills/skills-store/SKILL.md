@@ -111,13 +111,24 @@ After presenting the welcome message, wait for the user's response. Do NOT immed
 
 ## Pre-flight Checks
 
-Same as sub-skills. Run once per session:
+Run once per session before executing any `plugin-store` command. Do not echo routine output to the user.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
-2. **Check for updates**: Read `~/.plugin-store/last_check`, skip if updated within 12 hours.
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
 
 ## Skill Routing
 
@@ -167,7 +178,7 @@ npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade --yes
 
 **USDC 智能调仓（strategy-auto-rebalance）**
 ```bash
-# ~/.env 或策略运行目录下的 .env
+# ~/.cargo/bin/.env（推荐，所有策略共用）
 EVM_PRIVATE_KEY=0x你的私钥
 
 # 可选：Telegram 通知
@@ -179,6 +190,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 
 **ETH/USDC 网格交易（strategy-grid-trade）**
 ```bash
+# ~/.cargo/bin/.env（推荐，所有策略共用）
 # OKX API（用于报价和交易执行）
 OKX_API_KEY=你的APIKey
 OKX_SECRET_KEY=你的SecretKey
@@ -197,6 +209,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 
 **SOL 涨幅榜狙击（strategy-ranking-sniper）**
 ```bash
+# ~/.cargo/bin/.env（推荐，所有策略共用）
 # Solana 钱包
 SOLANA_PRIVATE_KEY=你的Base58私钥
 
@@ -214,6 +227,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 
 **SOL 聪明钱跟单（strategy-signal-tracker）**
 ```bash
+# ~/.cargo/bin/.env（推荐，所有策略共用）
 # Solana 钱包
 SOLANA_PRIVATE_KEY=你的Base58私钥
 
@@ -231,6 +245,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 
 **SOL Memepump 扫描（strategy-memepump-scanner）**
 ```bash
+# ~/.cargo/bin/.env（推荐，所有策略共用）
 # Solana 钱包
 SOLANA_PRIVATE_KEY=你的Base58私钥
 
