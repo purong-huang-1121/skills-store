@@ -91,7 +91,7 @@ fi
 echo ""
 echo "=== Step 5: 安装 skills-store skill ==="
 
-npx skills add purong-huang-1121/skills-store --skill skills-store --yes
+npx skills add purong-huang-1121/skills-store --skill skills-store --yes </dev/tty
 SKILLS_EXIT=$?
 
 if [ $SKILLS_EXIT -ne 0 ]; then
