@@ -341,7 +341,7 @@ Priority order (first match exits):
 | 2 | Hard Stop | PnL <= -25% | FULL sell |
 | 3 | Fast Stop | PnL <= -8% after 5 minutes | FULL sell |
 | 4 | Trailing Stop | Drawdown >= 12% from peak (activates at +8%) | FULL sell |
-| 5 | Time Stop | Elapsed >= time_stop_secs (default 120s test / 6h prod) | FULL sell |
+| 5 | Time Stop | Elapsed >= time_stop_secs (default 6h) | FULL sell |
 | 6 | Gradient TP | PnL >= TP level | PARTIAL sell (25%/35%/40%) |
 
 ### Gradient Take-Profit Levels
@@ -374,7 +374,7 @@ Parameters are persisted at `~/.skills-store/ranking_sniper_config.json`. View w
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `slippage_pct` | "15" | DEX slippage tolerance (%) |
+| `slippage_pct` | "3" | DEX slippage tolerance (%) |
 | `score_buy_threshold` | 10 | Momentum score threshold (0-125) |
 | `tick_interval_secs` | 10 | Polling interval (seconds) |
 | `cooldown_minutes` | 30 | Post-sell cooldown per token (minutes) |
@@ -389,7 +389,7 @@ Parameters are persisted at `~/.skills-store/ranking_sniper_config.json`. View w
 | `fast_stop_pct` | -8.0 | Fast stop threshold (%) |
 | `trailing_activate_pct` | 8.0 | Trailing stop activation (%) |
 | `trailing_drawdown_pct` | 12.0 | Trailing stop drawdown (%) |
-| `time_stop_secs` | 120 | Time stop (seconds), production: 21600 |
+| `time_stop_secs` | 21600 | Time stop (seconds, default 6h) |
 | `tp_levels` | [5, 15, 30] | Gradient take-profit levels (%) |
 
 ### Circuit Breaker
@@ -813,7 +813,7 @@ State includes:
 | All tokens skipped by slot_guard | Thresholds set to production values | For testing, lower `min_change_pct`, `min_liquidity`, `min_holders`, etc. |
 | Sell fails repeatedly | Low liquidity token | Use `sell-all` (auto-retries with halved amounts) or manual `sell` |
 | "Bot stopped" on tick | Daily loss limit or prior stop | Run `ranking-sniper reset --force` to clear state |
-| High slippage on swaps | Default 15% may be too high or too low | Adjust `slippage_pct` in config (3-5% for production, higher for memes) |
+| High slippage on swaps | Slippage tolerance mismatch | Adjust `slippage_pct` in config (default 3%, raise to 5-10% for low-liquidity memes) |
 | Telegram not working | Missing or incorrect bot token/chat ID | Set in config file or env vars, verify with Telegram BotFather |
 
 ---

@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use super::chains::{self, AutoRebalanceConfig};
-use super::config::log_to_file;
+use super::config::{log_to_file, AutoRebalanceConfig as UserConfig};
 use super::engine::{self, Decision, EngineConfig};
 use super::executor;
 use super::notifier::{Notifier, NotifyLevel};
@@ -144,8 +144,11 @@ pub async fn start(
     }
     let _ = state.save();
 
-    // Initialize safety monitor with persisted TVL history
-    let mut safety_monitor = SafetyMonitor::new();
+    // Initialize safety monitor with persisted TVL history and configurable alert threshold
+    let tvl_alert_threshold = UserConfig::load()
+        .map(|c| c.tvl_alert_threshold)
+        .unwrap_or(20.0);
+    let mut safety_monitor = SafetyMonitor::with_alert_threshold(tvl_alert_threshold);
     safety_monitor.load_tvl_history(&state);
 
     // Detect initial protocol from on-chain balances

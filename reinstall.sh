@@ -46,7 +46,7 @@ echo ""
 echo "=== Step 3: 检查 curl ==="
 
 if command -v curl >/dev/null 2>&1; then
-  echo "✅ curl 已安装：$(curl --version | head -1)"
+  echo "✅ curl 已安装：$(cur  l --version | head -1)"
 else
   echo "❌ curl 未安装，尝试安装..."
   if command -v apt-get >/dev/null 2>&1; then

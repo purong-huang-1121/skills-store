@@ -171,7 +171,7 @@ pub fn calc_trade_amount_cfg(
     let max_trade_usd = total_usd * cfg.max_trade_pct;
 
     let amount_usd = match direction {
-        "BUY" => (usdc_bal * 0.95).min(max_trade_usd),
+        "BUY" => usdc_bal.min(max_trade_usd),
         "SELL" => {
             let sellable_eth = (eth_bal - cfg.gas_reserve_eth).max(0.0);
             (sellable_eth * price).min(max_trade_usd)

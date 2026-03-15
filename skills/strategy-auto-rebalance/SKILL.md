@@ -147,7 +147,8 @@ Ready to start Auto-Rebalancer. Please confirm:
   Wallet:          0xf6e7...4572
 
   Gas threshold:   5 gwei (Base) / 50 gwei (Ethereum)
-  TVL safety:      Emergency withdraw if TVL drops >30%
+  TVL alert:       20.0% (configurable, non-blocking)
+  TVL emergency:   Emergency withdraw if TVL drops >30%
   State file:      ~/.skills-store/auto-rebalance-state.json
 
 Proceed? (y/n)
@@ -228,7 +229,7 @@ strategy-auto-rebalance stop
 ### strategy-auto-rebalance start
 
 ```bash
-strategy-auto-rebalance start [--chain <chain>] [--interval <seconds>] [--min-spread <pct>] [--max-break-even <days>] [--telegram-token <token>] [--telegram-chat <id>]
+strategy-auto-rebalance start [--chain <chain>] [--interval <seconds>] [--min-spread <pct>] [--max-break-even <days>] [--tvl-alert-threshold <pct>] [--telegram-token <token>] [--telegram-chat <id>]
 ```
 
 | Param | Default | Description |
@@ -237,6 +238,7 @@ strategy-auto-rebalance start [--chain <chain>] [--interval <seconds>] [--min-sp
 | `--interval` | `3600` | Check interval in **seconds** (e.g. 300 = 5 min, 3600 = 1 hour) |
 | `--min-spread` | `0.5` | Minimum APY spread (%) to trigger rebalance |
 | `--max-break-even` | `7` | Maximum break-even days (gas cost / daily yield improvement) |
+| `--tvl-alert-threshold` | `20.0` | TVL drop (%) that triggers a non-blocking alert (emergency at 30%) |
 | `--telegram-token` | env | Telegram Bot API token (or `TELEGRAM_BOT_TOKEN` env var) |
 | `--telegram-chat` | env | Telegram chat ID (or `TELEGRAM_CHAT_ID` env var) |
 
@@ -319,7 +321,7 @@ Note: each chain uses the same PID file, so only one daemon instance can run at 
 
 - **APY**: All rates are APY (compound formula from on-chain rate per second × seconds per year).
 - **Break-even**: Days for yield improvement to cover gas costs. Formula: `gas_cost / (capital × spread% / 365)`. Lower = better.
-- **TVL monitoring**: Tracks protocol TVL using median of recent vs earlier entries (not single-point comparison). A >20% drop triggers an alert; >30% triggers emergency withdrawal. History capped at 96 entries (~24h at 15min intervals).
+- **TVL monitoring**: Tracks protocol TVL using median of recent vs earlier entries (not single-point comparison). Requires at least 3 data points. A drop exceeding `tvl_alert_threshold` (default 20%, configurable) triggers a non-blocking alert; >30% triggers emergency withdrawal. History capped at 96 entries (~24h at 15min intervals).
 - **Gas circuit breaker**: Base threshold 0.5 gwei, Ethereum 50 gwei. Exceeding pauses all trading.
 - **Rebalance cooldown**: 24-hour minimum between rebalances, regardless of check interval. Prevents excessive trading from short-term APY fluctuations.
 - **Post-execution verification**: After withdrawal, verifies wallet received USDC before proceeding to deposit. Aborts if wallet balance is zero.

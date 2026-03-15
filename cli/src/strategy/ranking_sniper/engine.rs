@@ -16,7 +16,7 @@ pub const MAX_POSITIONS: usize = 5;
 pub const DAILY_LOSS_LIMIT_PCT: f64 = 15.0;
 pub const TOP_N: usize = 20;
 pub const TICK_INTERVAL_SECS: u64 = 10;
-pub const SLIPPAGE_PCT: &str = "15";
+pub const SLIPPAGE_PCT: &str = "3";
 pub const COOLDOWN_MINUTES: u64 = 30;
 pub const MIN_WALLET_BALANCE: f64 = 0.1;
 
@@ -51,7 +51,7 @@ pub const FAST_STOP_TIME_SECS: u64 = 300; // 5 minutes
 pub const FAST_STOP_PCT: f64 = -8.0;
 pub const TRAILING_ACTIVATE_PCT: f64 = 8.0;
 pub const TRAILING_DRAWDOWN_PCT: f64 = 12.0;
-pub const TIME_STOP_SECS: u64 = 120; // 2 minutes — for testing (was 6h)
+pub const TIME_STOP_SECS: u64 = 21600; // 6 hours
 pub const TP_LEVELS: [f64; 3] = [5.0, 15.0, 30.0]; // gradient take-profit
 
 // Momentum Score — lowered for testing

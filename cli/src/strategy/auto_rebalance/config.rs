@@ -33,6 +33,9 @@ pub struct AutoRebalanceConfig {
     pub max_gas_cost_usd: f64,
     /// Minimum seconds between rebalances (cooldown)
     pub min_rebalance_interval_secs: u64,
+    /// TVL drop % that triggers a non-blocking alert (default 20.0)
+    #[serde(default = "default_tvl_alert_threshold")]
+    pub tvl_alert_threshold: f64,
 
     // ── Telegram ──
     /// Telegram Bot API token (optional, can also use TELEGRAM_BOT_TOKEN env)
@@ -41,6 +44,10 @@ pub struct AutoRebalanceConfig {
     /// Telegram chat ID (optional, can also use TELEGRAM_CHAT_ID env)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub telegram_chat: Option<String>,
+}
+
+fn default_tvl_alert_threshold() -> f64 {
+    20.0
 }
 
 impl Default for AutoRebalanceConfig {
@@ -52,6 +59,7 @@ impl Default for AutoRebalanceConfig {
             chain: "base".to_string(),
             max_gas_cost_usd: 0.50,
             min_rebalance_interval_secs: 86400,
+            tvl_alert_threshold: 20.0,
             telegram_token: None,
             telegram_chat: None,
         }

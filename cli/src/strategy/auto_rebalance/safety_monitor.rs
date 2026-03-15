@@ -12,10 +12,7 @@ use crate::strategy::auto_rebalance::yield_monitor::{self, Protocol, YieldSnapsh
 /// Emergency withdrawal if TVL drops more than 30%.
 const TVL_DROP_THRESHOLD: f64 = 30.0;
 
-/// Alert (non-blocking) if TVL drops more than 20%.
-const TVL_ALERT_THRESHOLD: f64 = 20.0;
-
-/// Need at least 3 data points to confirm a trend.
+/// Need at least 3 data points to confirm a trend (matches docs reference).
 const MIN_DATA_POINTS: usize = 3;
 
 /// Prune entries older than 24 hours.
@@ -45,13 +42,24 @@ pub struct ProtocolHealth {
 
 pub struct SafetyMonitor {
     tvl_history: HashMap<Protocol, Vec<TvlEntry>>,
+    /// Non-blocking alert threshold (configurable, default 20.0%).
+    tvl_alert_threshold: f64,
 }
 
 impl SafetyMonitor {
-    /// Create a new monitor with empty history.
+    /// Create a new monitor with empty history and default alert threshold.
     pub fn new() -> Self {
         Self {
             tvl_history: HashMap::new(),
+            tvl_alert_threshold: 20.0,
+        }
+    }
+
+    /// Create a new monitor with a custom TVL alert threshold.
+    pub fn with_alert_threshold(tvl_alert_threshold: f64) -> Self {
+        Self {
+            tvl_history: HashMap::new(),
+            tvl_alert_threshold,
         }
     }
 
@@ -107,18 +115,15 @@ impl SafetyMonitor {
                     change.abs(),
                     TVL_DROP_THRESHOLD
                 ));
-            } else if change < -TVL_ALERT_THRESHOLD {
-                // Non-blocking alert: TVL dropped >20% but <30%
+            } else if change < -self.tvl_alert_threshold {
                 alerts.push(format!(
                     "TVL dropped {:.1}% — exceeds {:.0}% alert threshold (not blocking)",
                     change.abs(),
-                    TVL_ALERT_THRESHOLD
+                    self.tvl_alert_threshold
                 ));
             }
 
-            // Match TS behavior: 20% drop sets is_healthy=false (triggers hold/emergency in decision engine),
-            // 30% drop triggers emergency withdrawal.
-            let is_healthy = !emergency && change >= -TVL_ALERT_THRESHOLD;
+            let is_healthy = !emergency && change >= -self.tvl_alert_threshold;
 
             results.push(ProtocolHealth {
                 protocol: snap.protocol,
@@ -145,8 +150,8 @@ impl SafetyMonitor {
         // Filter out zero-TVL entries
         let valid: Vec<&TvlEntry> = entries.iter().filter(|e| e.tvl_usd > 0.0).collect();
 
-        // Need enough data points to split into two halves
-        if valid.len() < MIN_DATA_POINTS * 2 {
+        // Need at least MIN_DATA_POINTS to confirm a trend (matches docs reference).
+        if valid.len() < MIN_DATA_POINTS {
             return false;
         }
 
@@ -360,20 +365,12 @@ mod tests {
     fn tvl_too_few_data_points_no_emergency() {
         let mut monitor = SafetyMonitor::new();
         let t = now();
-        // Only 4 entries — need MIN_DATA_POINTS * 2 = 6
+        // Only 2 entries — below MIN_DATA_POINTS = 3, should NOT trigger
         monitor.tvl_history.insert(
             Protocol::Morpho,
             vec![
                 TvlEntry {
                     tvl_usd: 1000.0,
-                    timestamp: t - 3600 * 3,
-                },
-                TvlEntry {
-                    tvl_usd: 900.0,
-                    timestamp: t - 3600 * 2,
-                },
-                TvlEntry {
-                    tvl_usd: 100.0,
                     timestamp: t - 3600,
                 },
                 TvlEntry {
@@ -427,8 +424,9 @@ mod tests {
                 },
             ],
         );
-        // Only 4 non-zero entries, under MIN_DATA_POINTS * 2 = 6
-        assert!(!monitor.should_emergency_withdraw(Protocol::Aave));
+        // 4 non-zero entries >= MIN_DATA_POINTS=3. Split: earlier=[1000,900] median=950,
+        // recent=[500,400] median=450 => 52% drop > 30% threshold => triggers emergency.
+        assert!(monitor.should_emergency_withdraw(Protocol::Aave));
     }
 
     #[test]
