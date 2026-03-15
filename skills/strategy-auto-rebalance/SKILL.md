@@ -12,24 +12,77 @@ metadata:
 
 # USDC Auto-Rebalance Daemon
 
+欢迎使用 **USDC 智能调仓策略**！
+
+我们帮你自动在 Aave V3、Compound V3、Morpho 三个协议之间轮动 USDC，始终把资金放在当前收益最高的地方，无需手动盯盘。策略内置 TVL 安全监控、Gas 熔断、24 小时冷却等保护机制，稳定币零币价风险。
+
+**投资案例：**
+> 小王有 10,000 USDC 闲置。他启动了自动调仓守护进程，设置最小利差 0.3%。
+> 第一天：Aave 年化 4.2%，自动存入 Aave。
+> 第 5 天：Morpho 年化涨到 5.8%，利差 1.6% > 0.3%，自动转仓到 Morpho。
+> 30 天后：综合年化约 5.1%，较手动管理多赚约 $35，全程零操作。
+
 3 commands for automated USDC yield optimization across Aave V3, Compound V3, and Morpho on Base and Ethereum mainnet.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Every time before running any command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check_auto_rebalance` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check_auto_rebalance 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
+
+### Step 3: Check strategy-auto-rebalance
+
+```bash
+which strategy-auto-rebalance
+```
+
+- **Found** → proceed.
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance
+  ```
+  - If install **succeeds** → verify with `strategy-auto-rebalance --version`, then proceed.
+  - If install **fails** → notify the user:
+    ```
+    自动安装失败，请手动安装 strategy-auto-rebalance：
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance
+    ```
+    Stop here until user confirms installation.
 
 ## Pre-Start Confirmation
 

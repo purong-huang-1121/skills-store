@@ -14,24 +14,78 @@ metadata:
 
 # SOL Ranking Sniper v1.0.0
 
+欢迎使用 **SOL 涨幅榜狙击策略**！
+
+我们实时监控 OKX DEX 涨幅榜，当新币进入榜单时自动触发买入，跌出榜单时自动卖出。策略内置 25 项安全检查（流动性、持仓集中度、Dev 钱包等）+ 动量评分（0-125分），只交易评分达标的高质量标的，6 层退出机制全程保护仓位。
+
+**投资案例：**
+> 小陈用 2 SOL 启动涨幅榜狙击。某天上午一个新币 $BONK2 冲进涨幅榜前 10，动量评分 98 分，安全检查全过。
+> 机器人以均价 $0.0012 自动买入，持仓期间 $BONK2 继续拉升 40%。
+> 跌出榜单触发排名退出，以 $0.00165 自动卖出，单笔盈利约 $82（+37.5%）。
+> 同日另一个币安全检查未通过（Dev 钱包集中度过高），自动跳过，规避了一次归零风险。
+
 Automated Solana token sniper that monitors the OKX DEX trending ranking, applies a 3-layer safety filter with momentum scoring, and executes trades with a 6-layer exit system. Built into the `plugin-store` CLI as a native Rust module.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Every time before running any command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check_ranking_sniper` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check_ranking_sniper 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
+
+### Step 3: Check strategy-ranking-sniper
+
+```bash
+which strategy-ranking-sniper
+```
+
+- **Found** → proceed.
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-ranking-sniper
+  ```
+  - If install **succeeds** → verify with `strategy-ranking-sniper --version`, then proceed.
+  - If install **fails** → notify the user:
+    ```
+    自动安装失败，请手动安装 strategy-ranking-sniper：
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-ranking-sniper
+    ```
+    Stop here until user confirms installation.
 
 ## Skill Routing
 

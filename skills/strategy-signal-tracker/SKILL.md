@@ -16,24 +16,78 @@ metadata:
 
 # SOL Signal Tracker v3.0
 
+欢迎使用 **SOL 聪明钱跟单策略**！
+
+我们每 20 秒轮询 OKX Signal API，实时跟踪 SmartMoney、KOL、Whale 的买入信号，经过 17 项安全过滤（Dev/Bundler 零容忍）后自动跟单买入，配合多档止盈、止损、追踪止损、时间衰减止损，以及 Session 级别连亏熔断保护。
+
+**投资案例：**
+> 小张用 3 SOL 开启聪明钱跟单。某 Whale 钱包大量买入 $WIF，触发信号评分 91 分，安全检查通过。
+> 机器人自动跟单买入，设置止盈 +50% / 止损 -15%。
+> 2 小时后 $WIF 拉涨 62%，触发追踪止损锁定收益，最终以 +55% 出场。
+> 当天 Session 累计盈利 1.65 SOL。同日另一信号因 Bundler 钱包检测到异常，自动过滤，避开了一次砸盘。
+
 Automated smart-money signal following strategy on Solana. Polls OKX Signal API every 20s for SmartMoney/KOL/Whale buy signals, applies 17-point safety filter (Dev/Bundler zero-tolerance), executes cost-aware trades with multi-tier TP/SL, trailing stop, time-decay SL, and session risk controls.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Every time before running any command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check_signal_tracker` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check_signal_tracker 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
+
+### Step 3: Check strategy-signal-tracker
+
+```bash
+which strategy-signal-tracker
+```
+
+- **Found** → proceed.
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
+  ```
+  - If install **succeeds** → verify with `strategy-signal-tracker --version`, then proceed.
+  - If install **fails** → notify the user:
+    ```
+    自动安装失败，请手动安装 strategy-signal-tracker：
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
+    ```
+    Stop here until user confirms installation.
 
 ## Skill Routing
 

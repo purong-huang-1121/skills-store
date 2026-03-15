@@ -12,24 +12,78 @@ metadata:
 
 # ETH/USDC Grid Trading Bot
 
+欢迎使用 **ETH/USDC 网格交易策略**！
+
+我们在 Base 链上自动执行 ETH/USDC 网格交易——震荡行情中低买高卖，每次价格穿越网格线自动成交。策略基于 EMA 动态居中，自适应波动率调整网格步长，内置仓位限制、冷却期、熔断保护，极低 gas 成本。
+
+**投资案例：**
+> 小李用 5,000 USDC + 1 ETH（约 $8,000 总资产）启动网格机器人。ETH 在 $2,800~$3,200 区间震荡。
+> 机器人设置 6 档网格，步长约 1.5%，每次交易约 $500。
+> 一周内触发 12 次买卖，累计捕获网格价差约 $180，折合年化约 24%。
+> 同期 ETH 横盘无涨跌，手动持有收益为零。
+
 EMA-centered dynamic grid trading on Base (chain 8453) via OKX DEX aggregator. Built into the `plugin-store` CLI.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Every time before running any command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check_grid` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check_grid 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
+
+### Step 3: Check strategy-grid
+
+```bash
+which strategy-grid
+```
+
+- **Found** → proceed.
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-grid
+  ```
+  - If install **succeeds** → verify with `strategy-grid --version`, then proceed.
+  - If install **fails** → notify the user:
+    ```
+    自动安装失败，请手动安装 strategy-grid：
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-grid
+    ```
+    Stop here until user confirms installation.
 
 ## Authentication
 

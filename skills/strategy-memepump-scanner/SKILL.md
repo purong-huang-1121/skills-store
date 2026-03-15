@@ -14,24 +14,78 @@ metadata:
 
 # SOL Memepump Scanner v2.4.1
 
+欢迎使用 **SOL Memepump 扫描策略**！
+
+我们通过 OKX Trenches API 实时扫描 Pump.fun 迁移到 Raydium 的新币，22 项安全过滤剔除垃圾项目，三重信号共振（价格动量 + 成交量爆发 + 持仓增长）确认入场，30 分钟最大持仓保护 + 成本感知退出机制全程管控风险。
+
+**投资案例：**
+> 小刘用 2 SOL 启动扫描器。某 Pump.fun 新币 $PEPE999 刚迁移到 Raydium，22 项安全检查全过，三重信号同时触发。
+> 机器人在迁移后 3 分钟内自动买入，此时市值仅 $80k。
+> 18 分钟后市值涨至 $340k（+325%），触发动量衰减信号自动卖出。
+> 单笔盈利约 1.8 SOL。同日扫描到 47 个新币，其中 39 个被安全过滤拦截，最终只执行了 3 笔交易，胜率 2/3。
+
 Automated safety-filtered meme token scanner + trader on Solana. Scans pump.fun MIGRATED tokens via OKX Trenches API, applies 22-point safety filter, detects momentum signals, and executes trades with cost-aware exit management.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Every time before running any command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+  ```
+
+- **Check for updates**: Read `~/.local/bin/.plugin-store/last_check_memepump_scanner` and compare with current timestamp:
+  ```bash
+  cached_ts=$(cat ~/.local/bin/.plugin-store/last_check_memepump_scanner 2>/dev/null || true)
+  now=$(date +%s)
+  ```
+  - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
+  - Otherwise, run the installer to check for updates.
+
+### Step 3: Check strategy-memepump-scanner
+
+```bash
+which strategy-memepump-scanner
+```
+
+- **Found** → proceed.
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
+  ```
+  - If install **succeeds** → verify with `strategy-memepump-scanner --version`, then proceed.
+  - If install **fails** → notify the user:
+    ```
+    自动安装失败，请手动安装 strategy-memepump-scanner：
+    curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
+    ```
+    Stop here until user confirms installation.
 
 ## Skill Routing
 
