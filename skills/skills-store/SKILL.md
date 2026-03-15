@@ -100,8 +100,8 @@ which skills-store
 - User asks about **Kalshi** (合规预测市场) → see **[Kalshi CLI Reference]** below, run `skills-store kalshi`
 
 ### 自动化策略
-- User asks about **grid trading specifically** → use `skills-store grid`
-- User asks about **USDC yield / auto-rebalance specifically** → use `skills-store auto-rebalance`
+- User asks about **grid trading specifically** → use `strategy-grid`
+- User asks about **USDC yield / auto-rebalance specifically** → use `strategy-auto-rebalance`
 
 ### 策略安装（重要）
 
@@ -286,7 +286,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 风险等级：⭐⭐ 中低（持有 ETH 有币价风险，网格对冲部分波动）      │
 │  ● 预估年化：10%~30%（取决于市场波动率，震荡行情最佳）              │
 │  ● 运行方式：后台守护进程，默认每 60 秒执行一次（可通过               │
-│    skills-store grid set --key tick_interval_secs --value N 调整）      │
+│    strategy-grid set --key tick_interval_secs --value N 调整）      │
 │  ● 特点：自适应波动率、风控熔断、仓位限制、失败重试                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  C. 稳定币杠杆循环 (Aave Leverage Loop)                              │
@@ -444,7 +444,7 @@ If user provides wallet address or says "帮我查" → use `skills-store portfo
 After confirmation, execute:
 
 ```bash
-skills-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
+strategy-auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 ```
 
 ### Step A4: Post-launch guidance
@@ -453,12 +453,12 @@ skills-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 智能调仓守护进程已启动！
 
 后续操作：
-• 查看状态：skills-store auto-rebalance status
-• 停止运行：skills-store auto-rebalance stop
+• 查看状态：strategy-auto-rebalance status
+• 停止运行：strategy-auto-rebalance stop
 • 设置 Telegram 通知（推荐）：
   export TELEGRAM_BOT_TOKEN=<TOKEN>
   export TELEGRAM_CHAT_ID=<CHAT_ID>
-  skills-store auto-rebalance start --chain {chain}
+  strategy-auto-rebalance start --chain {chain}
 ```
 
 ---
@@ -486,7 +486,7 @@ If user provides wallet address or says "帮我查" → use `skills-store portfo
 Before launching, run market analysis:
 
 ```bash
-skills-store grid analyze
+strategy-grid analyze
 ```
 
 Present results to user:
@@ -520,7 +520,7 @@ Market comment logic:
 | 链 | Base |
 | 可用资金 | ~${total_usd} (ETH + USDC) |
 | 网格级数 | 6 |
-| 执行频率 | 每 60 秒（可通过 skills-store grid set --key tick_interval_secs 调整） |
+| 执行频率 | 每 60 秒（可通过 strategy-grid set --key tick_interval_secs 调整） |
 | 单笔上限 | 12% 总仓位 |
 | 仓位保护 | ETH 占比 35%~65% |
 
@@ -530,7 +530,7 @@ Market comment logic:
 After confirmation, execute:
 
 ```bash
-skills-store grid start
+strategy-grid start
 ```
 
 ### Step B4: Post-launch guidance
@@ -539,13 +539,13 @@ skills-store grid start
 网格交易 Bot 已启动！
 
 后续操作：
-• 查看状态：skills-store grid status
-• 查看收益：skills-store grid report
-• 交易记录：skills-store grid history
-• 停止运行：skills-store grid stop
-• 市场分析：skills-store grid analyze
-• 调整参数：skills-store grid set --key <name> --value <value>
-• 查看配置：skills-store grid config
+• 查看状态：strategy-grid status
+• 查看收益：strategy-grid report
+• 交易记录：strategy-grid history
+• 停止运行：strategy-grid stop
+• 市场分析：strategy-grid analyze
+• 调整参数：strategy-grid set --key <name> --value <value>
+• 查看配置：strategy-grid config
 ```
 
 ---
@@ -773,11 +773,11 @@ Alerts:
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `skills-store ranking-sniper tick` | 执行单次轮询 |
-| `skills-store ranking-sniper start` | 启动守护进程 |
-| `skills-store ranking-sniper stop` | 停止运行 |
-| `skills-store ranking-sniper status` | 查看状态 |
-| `skills-store ranking-sniper report` | 详细 PnL 报告 |
+| `strategy-ranking-sniper tick` | 执行单次轮询 |
+| `strategy-ranking-sniper start` | 启动守护进程 |
+| `strategy-ranking-sniper stop` | 停止运行 |
+| `strategy-ranking-sniper status` | 查看状态 |
+| `strategy-ranking-sniper report` | 详细 PnL 报告 |
 
 ### Step D1: Confirm and configure
 
@@ -798,10 +798,10 @@ SOL 涨幅榜狙击 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-skills-store ranking-sniper config
+strategy-ranking-sniper config
 
 # 启动
-skills-store ranking-sniper start
+strategy-ranking-sniper start
 ```
 
 ---
@@ -835,11 +835,11 @@ skills-store ranking-sniper start
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `skills-store signal-tracker tick` | 执行单次轮询 |
-| `skills-store signal-tracker start` | 启动守护进程 |
-| `skills-store signal-tracker stop` | 停止运行 |
-| `skills-store signal-tracker status` | 查看状态 |
-| `skills-store signal-tracker report` | 详细 PnL 报告 |
+| `strategy-signal-tracker tick` | 执行单次轮询 |
+| `strategy-signal-tracker start` | 启动守护进程 |
+| `strategy-signal-tracker stop` | 停止运行 |
+| `strategy-signal-tracker status` | 查看状态 |
+| `strategy-signal-tracker report` | 详细 PnL 报告 |
 
 ### Step E1: Confirm and configure
 
@@ -860,13 +860,13 @@ SOL 聪明钱跟单 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-skills-store signal-tracker config
+strategy-signal-tracker config
 
 # 启动（推荐先用 dry-run 测试）
-skills-store signal-tracker start --dry-run
+strategy-signal-tracker start --dry-run
 
 # 确认无误后正式启动
-skills-store signal-tracker start
+strategy-signal-tracker start
 ```
 
 ---
@@ -904,12 +904,12 @@ skills-store signal-tracker start
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `skills-store scanner tick` | 执行单次扫描 |
-| `skills-store scanner start` | 启动守护进程 |
-| `skills-store scanner stop` | 停止运行 |
-| `skills-store scanner status` | 查看状态 |
-| `skills-store scanner report` | 详细 PnL 报告 |
-| `skills-store scanner analyze` | Dry-run 分析 |
+| `strategy-memepump-scanner tick` | 执行单次扫描 |
+| `strategy-memepump-scanner start` | 启动守护进程 |
+| `strategy-memepump-scanner stop` | 停止运行 |
+| `strategy-memepump-scanner status` | 查看状态 |
+| `strategy-memepump-scanner report` | 详细 PnL 报告 |
+| `strategy-memepump-scanner analyze` | Dry-run 分析 |
 
 ### Step F1: Confirm and configure
 
@@ -930,13 +930,13 @@ SOL Memepump 扫描 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-skills-store scanner config
+strategy-memepump-scanner config
 
 # 先用 analyze 观察
-skills-store scanner analyze
+strategy-memepump-scanner analyze
 
 # 启动
-skills-store scanner start
+strategy-memepump-scanner start
 ```
 
 ---
@@ -953,7 +953,7 @@ skills-store scanner start
 | 最小资金 | ~$500 (ETH) | ~$50 | ~$100 (Arb) | ~0.5 SOL | ~0.3 SOL | ~0.2 SOL |
 | 需要的密钥 | EVM_PRIVATE_KEY | EVM_PRIVATE_KEY + OKX API | EVM_PRIVATE_KEY | SOL 私钥 + OKX API | SOL 私钥 + OKX API | SOL 私钥 + OKX API |
 | 运行方式 | 后台守护进程 | 后台守护进程 | AI 引导执行 | 后台守护进程 | 后台守护进程 | 后台守护进程 |
-| CLI 命令 | `skills-store auto-rebalance` | `skills-store grid` | `skills-store aave` | `skills-store ranking-sniper` | `skills-store signal-tracker` | `skills-store scanner` |
+| CLI 命令 | `strategy-auto-rebalance` | `strategy-grid` | `skills-store aave` | `strategy-ranking-sniper` | `strategy-signal-tracker` | `strategy-memepump-scanner` |
 
 ## Authentication Requirements
 
