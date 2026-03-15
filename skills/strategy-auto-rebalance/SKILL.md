@@ -116,9 +116,18 @@ which strategy-auto-rebalance
 需要先配置 .env 环境变量（EVM_PRIVATE_KEY 等）才能运行。
 ```
 
-然后询问用户：
-1. 选择链（Base / Ethereum）
-2. 是否已配置 `.env`，如未配置则引导配置
+然后询问用户选择链（Base / Ethereum）。
+
+检查 `.env` 配置（用 grep，不要用 python/其他方式）：
+
+```bash
+grep -q "EVM_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "found" || echo "not found"
+```
+
+- **found** → 直接进入 Pre-Start Confirmation，展示启动参数确认表格。
+- **not found** → 引导用户创建/编辑 `~/.cargo/bin/.env`，写入 `EVM_PRIVATE_KEY=0x你的私钥`，完成后再进入 Pre-Start Confirmation。
+
+**不要用 python3、source、export 等方式检测环境变量。binary 会通过 dotenvy 自动加载 `.env`，只需确认文件里有该 key 即可。**
 
 ## Pre-Start Confirmation
 
