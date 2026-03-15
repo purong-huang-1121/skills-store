@@ -4,10 +4,6 @@
 
 set -e
 
-# 当通过 curl | sh 执行时，stdin 是管道而非终端。
-# 重定向到 /dev/tty，让 npx 和 read 能正常与用户交互。
-exec < /dev/tty
-
 echo "=== Step 1: 删除 skills-store 二进制 ==="
 
 # 在常见目录和 PATH 中查找并删除
@@ -172,20 +168,20 @@ elif [ "$(uname -s)" = "Darwin" ]; then
   echo ""
   echo "已用 TextEdit 打开 $ENV_FILE"
   echo "请填写环境变量后保存，然后按回车继续..."
-  read -r _
+  read -r _ </dev/tty
 elif command -v xdg-open >/dev/null 2>&1; then
   # Linux 桌面环境
   xdg-open "$ENV_FILE"
   echo ""
   echo "已打开 $ENV_FILE，请填写环境变量后保存，然后按回车继续..."
-  read -r _
+  read -r _ </dev/tty
 else
   echo ""
   echo "请手动编辑以下文件，填写环境变量后再继续："
   echo "  $ENV_FILE"
   echo ""
   echo "填写完成后按回车继续..."
-  read -r _
+  read -r _ </dev/tty
 fi
 
 echo ""
