@@ -1,8 +1,12 @@
 #!/bin/sh
 # reinstall.sh — 清理并重新安装 skills-store skill
-# Usage: sh reinstall.sh
+# Usage: curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/reinstall.sh | sh
 
 set -e
+
+# 当通过 curl | sh 执行时，stdin 是管道而非终端。
+# 重定向到 /dev/tty，让 npx 和 read 能正常与用户交互。
+exec < /dev/tty
 
 echo "=== Step 1: 删除 skills-store 二进制 ==="
 
