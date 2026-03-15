@@ -107,7 +107,7 @@ pub fn build_signature(creds: &KalshiCreds, method: &str, path: &str) -> Result<
 /// 1. `KALSHI_KEY_ID` + `KALSHI_PRIVATE_KEY_PEM` environment variables.
 ///    If `KALSHI_PRIVATE_KEY_PEM` contains "BEGIN" it is used as PEM content;
 ///    otherwise it is treated as a file path.
-/// 2. `~/.plugin-store/kalshi_{env}.json` cache file.
+/// 2. `~/.skills-store/kalshi_{env}.json` cache file.
 pub fn load_creds(env: &KalshiEnv) -> Result<Option<KalshiCreds>> {
     // 1. Try environment variables
     if let (Ok(key_id), Ok(pem_val)) = (
@@ -157,7 +157,7 @@ pub fn require_creds(env: &KalshiEnv) -> Result<KalshiCreds> {
 pub fn save_creds(creds: &KalshiCreds, env: &KalshiEnv) -> Result<()> {
     let cache_dir = dirs::home_dir()
         .context("cannot determine home directory")?
-        .join(".plugin-store");
+        .join(".skills-store");
     std::fs::create_dir_all(&cache_dir)?;
     let path = cache_dir.join(env.cache_filename());
     let data = serde_json::to_string_pretty(creds)?;
@@ -168,7 +168,7 @@ pub fn save_creds(creds: &KalshiCreds, env: &KalshiEnv) -> Result<()> {
 fn cache_path(env: &KalshiEnv) -> std::path::PathBuf {
     dirs::home_dir()
         .unwrap_or_default()
-        .join(".plugin-store")
+        .join(".skills-store")
         .join(env.cache_filename())
 }
 

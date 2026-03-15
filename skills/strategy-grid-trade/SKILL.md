@@ -22,7 +22,7 @@ metadata:
 > 一周内触发 12 次买卖，累计捕获网格价差约 $180，折合年化约 24%。
 > 同期 ETH 横盘无涨跌，手动持有收益为零。
 
-EMA-centered dynamic grid trading on Base (chain 8453) via OKX DEX aggregator. Built into the `plugin-store` CLI.
+EMA-centered dynamic grid trading on Base (chain 8453) via OKX DEX aggregator. Built into the `skills-store` CLI.
 
 ## Pre-flight Checks
 
@@ -47,10 +47,10 @@ which onchainos
     ```
     Stop here until user confirms onchainos is available.
 
-### Step 2: Check plugin-store
+### Step 2: Check skills-store
 
 ```bash
-which plugin-store
+which skills-store
 ```
 
 - **Not found** → install:
@@ -115,7 +115,7 @@ TELEGRAM_CHAT_ID=...    # Telegram chat ID for alerts
 1. Run `skills-store grid config` to show the user their current parameters
 2. Present the parameters in a readable table and ask if they want to adjust any
 3. If the user wants to change a parameter, use `skills-store grid set --key <name> --value <value>`
-4. Parameters are saved to `grid_config.json` in the same directory as the `plugin-store` executable and persist across restarts — no need to set them every time
+4. Parameters are saved to `grid_config.json` in the same directory as the `skills-store` executable and persist across restarts — no need to set them every time
 
 Example flow:
 ```bash
@@ -188,7 +188,7 @@ skills-store grid stop
 
 ## Tunable Parameters
 
-Parameters are persisted at `grid_config.json` in the same directory as the `plugin-store` executable. View with `skills-store grid config`, modify with `skills-store grid set --key <key> --value <value>`. Changes take effect on next tick (no rebuild needed). If no config file exists, defaults below are used.
+Parameters are persisted at `grid_config.json` in the same directory as the `skills-store` executable. View with `skills-store grid config`, modify with `skills-store grid set --key <key> --value <value>`. Changes take effect on next tick (no rebuild needed). If no config file exists, defaults below are used.
 
 The **Key** column shows the exact key name to use with `skills-store grid set`.
 

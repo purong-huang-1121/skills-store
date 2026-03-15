@@ -1,6 +1,6 @@
 use clap::Parser;
-use plugin_store_cli::commands::strategy_grid::{execute, GridCommand};
-use plugin_store_cli::output;
+use skills_store_cli::commands::strategy_grid::{execute, GridCommand};
+use skills_store_cli::output;
 
 #[derive(Parser)]
 #[command(

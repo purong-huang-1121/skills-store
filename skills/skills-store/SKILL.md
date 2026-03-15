@@ -111,10 +111,10 @@ After presenting the welcome message, wait for the user's response. Do NOT immed
 
 ## Pre-flight Checks
 
-Run once per session before executing any `plugin-store` command. Do not echo routine output to the user.
+Run once per session before executing any `skills-store` command. Do not echo routine output to the user.
 
 ```bash
-which plugin-store
+which skills-store
 ```
 
 - **Not found** → install:
@@ -339,7 +339,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 特点：健康因子监控、利差反转告警、一键去杠杆退出                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  ═══════════════ Solana Meme 策略（依赖线上 plugin-store）══════════════ │
+│  ═══════════════ Solana Meme 策略（依赖线上 skills-store）══════════════ │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │  D. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
@@ -1034,7 +1034,7 @@ TELEGRAM_CHAT_ID=...
 | User has no USDC | Suggest using `skills-store uniswap swap` to swap first |
 | User has no ETH on Base | Suggest bridging or swapping |
 | EVM_PRIVATE_KEY not set | Show setup instructions before launching |
-| User asks about other strategies (funding rate, sUSDe loop) | These are not yet built-in — guide user through the steps using individual `plugin-store` commands (`skills-store aave`, `skills-store hyperliquid`, `skills-store ethena`) |
+| User asks about other strategies (funding rate, sUSDe loop) | These are not yet built-in — guide user through the steps using individual `skills-store` commands (`skills-store aave`, `skills-store hyperliquid`, `skills-store ethena`) |
 | Aave 利差为负 (borrow > supply) | Strategy C 不可执行，建议策略 A 或等待利率回归 |
 | 健康因子过低 | 策略 C 循环时自动停止（HF < 1.30），提醒用户去杠杆 |
 | User just installed dapp-composer with no follow-up | Show Post-Install Welcome listing all skills |
@@ -1053,7 +1053,7 @@ TELEGRAM_CHAT_ID=...
 
 # dApp CLI References (Built-in)
 
-The following dApp commands are all available via the `plugin-store` binary after running the Pre-flight Check above.
+The following dApp commands are all available via the `skills-store` binary after running the Pre-flight Check above.
 
 ---
 

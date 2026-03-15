@@ -1,6 +1,6 @@
 use clap::Parser;
-use plugin_store_cli::commands::strategy_memepump_scanner::{execute, ScannerCommand};
-use plugin_store_cli::output;
+use skills_store_cli::commands::strategy_memepump_scanner::{execute, ScannerCommand};
+use skills_store_cli::output;
 
 #[derive(Parser)]
 #[command(

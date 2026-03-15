@@ -47,10 +47,10 @@ which onchainos
     ```
     Stop here until user confirms onchainos is available.
 
-### Step 2: Check plugin-store
+### Step 2: Check skills-store
 
 ```bash
-which plugin-store
+which skills-store
 ```
 
 - **Not found** → install:

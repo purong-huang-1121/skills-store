@@ -33,7 +33,7 @@ const SAFETY_CHECK_INTERVAL_SECS: u64 = 900;
 pub fn pid_path() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join(".plugin-store")
+        .join(".skills-store")
         .join("auto-rebalance-daemon.pid")
 }
 

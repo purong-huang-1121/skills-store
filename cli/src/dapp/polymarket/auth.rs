@@ -182,7 +182,7 @@ pub fn load_api_creds() -> Result<Option<ApiCreds>> {
         }));
     }
 
-    let cache_path = dirs::home_dir().map(|h| h.join(".plugin-store").join("polymarket_creds.json"));
+    let cache_path = dirs::home_dir().map(|h| h.join(".skills-store").join("polymarket_creds.json"));
 
     if let Some(ref path) = cache_path {
         if path.exists() {
@@ -202,7 +202,7 @@ pub fn load_api_creds() -> Result<Option<ApiCreds>> {
 pub fn save_api_creds(creds: &ApiCreds) -> Result<()> {
     let cache_dir = dirs::home_dir()
         .context("cannot determine home directory")?
-        .join(".plugin-store");
+        .join(".skills-store");
     std::fs::create_dir_all(&cache_dir)?;
     let path = cache_dir.join("polymarket_creds.json");
     let data = serde_json::to_string_pretty(creds)?;

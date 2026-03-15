@@ -1,9 +1,9 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use plugin_store_cli::{commands, dapp, output};
+use skills_store_cli::{commands, dapp, output};
 
 #[derive(Parser)]
 #[command(
-    name = "plugin-store",
+    name = "skills-store",
     version,
     about = "onchainOS CLI — on-chain DeFi operations"
 )]

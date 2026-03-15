@@ -1,6 +1,6 @@
 use clap::Parser;
-use plugin_store_cli::commands::strategy_ranking_sniper::{execute, RankingSniperCommand};
-use plugin_store_cli::output;
+use skills_store_cli::commands::strategy_ranking_sniper::{execute, RankingSniperCommand};
+use skills_store_cli::output;
 
 #[derive(Parser)]
 #[command(

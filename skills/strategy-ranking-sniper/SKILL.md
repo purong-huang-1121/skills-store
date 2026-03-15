@@ -22,7 +22,7 @@ metadata:
 > 跌出榜单触发排名退出，以 $0.00165 自动卖出，单笔盈利约 $82（+37.5%）。
 > 同日另一个币安全检查未通过（Dev 钱包集中度过高），自动跳过，规避了一次归零风险。
 
-Automated Solana token sniper that monitors the OKX DEX trending ranking, applies a 3-layer safety filter with momentum scoring, and executes trades with a 6-layer exit system. Built into the `plugin-store` CLI as a native Rust module.
+Automated Solana token sniper that monitors the OKX DEX trending ranking, applies a 3-layer safety filter with momentum scoring, and executes trades with a 6-layer exit system. Built into the `skills-store` CLI as a native Rust module.
 
 ## Pre-flight Checks
 
@@ -47,10 +47,10 @@ which onchainos
     ```
     Stop here until user confirms onchainos is available.
 
-### Step 2: Check plugin-store
+### Step 2: Check skills-store
 
 ```bash
-which plugin-store
+which skills-store
 ```
 
 - **Not found** → install:

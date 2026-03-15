@@ -1,6 +1,6 @@
 use clap::Parser;
-use plugin_store_cli::commands::strategy_auto_rebalance::{execute, AutoRebalanceCommand};
-use plugin_store_cli::output;
+use skills_store_cli::commands::strategy_auto_rebalance::{execute, AutoRebalanceCommand};
+use skills_store_cli::output;
 
 #[derive(Parser)]
 #[command(
