@@ -1,6 +1,6 @@
 #!/bin/sh
-# reset.sh — 清理并重新安装 skills-store skill
-# Usage: sh reset.sh
+# reinstall.sh — 清理并重新安装 skills-store skill
+# Usage: sh reinstall.sh
 
 set -e
 
@@ -89,7 +89,51 @@ else
 fi
 
 echo ""
-echo "=== Step 5: 安装 skills-store skill ==="
+echo "=== Step 5: 配置 .env 环境变量 ==="
+
+ENV_FILE="$HOME/.cargo/bin/.env"
+mkdir -p "$HOME/.cargo/bin"
+
+# 如果 .env 不存在，创建模板
+if [ ! -f "$ENV_FILE" ]; then
+  cat > "$ENV_FILE" <<'EOF'
+# skills-store 环境变量配置
+# 填写后保存退出即可
+
+# ── EVM 钱包私钥（Aave / Morpho / Grid Trading / Auto-Rebalance 必填）──
+EVM_PRIVATE_KEY=
+
+# ── OKX API（Grid Trading / Ranking Sniper / Signal Tracker / Memepump 必填）──
+OKX_API_KEY=
+OKX_SECRET_KEY=
+OKX_PASSPHRASE=
+
+# ── Solana 钱包私钥（Ranking Sniper / Signal Tracker / Memepump 必填）──
+SOLANA_PRIVATE_KEY=
+
+# ── Telegram 通知（可选，所有策略支持）──
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+EOF
+  echo "✅ 已创建 $ENV_FILE"
+else
+  echo "（$ENV_FILE 已存在，跳过创建）"
+fi
+
+# 打开编辑器
+echo "正在打开编辑器，请填写需要的环境变量后保存退出..."
+if command -v nano >/dev/null 2>&1; then
+  nano "$ENV_FILE"
+elif command -v vim >/dev/null 2>&1; then
+  vim "$ENV_FILE"
+elif command -v vi >/dev/null 2>&1; then
+  vi "$ENV_FILE"
+else
+  echo "未找到编辑器，请手动编辑：$ENV_FILE"
+fi
+
+echo ""
+echo "=== Step 6: 安装 skills-store skill ==="
 
 npx skills add purong-huang-1121/skills-store --skill skills-store --yes
 
