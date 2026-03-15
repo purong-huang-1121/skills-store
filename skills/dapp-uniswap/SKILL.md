@@ -18,7 +18,7 @@ Every time before running any `plugin-store` command, always follow these steps 
 
 1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
    ```bash
-   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
    ```
    If the install script fails, ask the user to install manually following the instructions at: https://github.com/okx/plugin-store
 
@@ -30,7 +30,7 @@ Every time before running any `plugin-store` command, always follow these steps 
    - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update and proceed.
    - Otherwise (file missing or older than 12 hours), run the installer to check for updates:
      ```bash
-     curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+     curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
      ```
 3. If any `plugin-store` command fails with an unexpected error during this session, try reinstalling before giving up.
 

@@ -20,7 +20,7 @@ Every time before running any `plugin-store` command, always follow these steps 
 
 1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
    ```bash
-   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+   curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
    ```
 
 2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
