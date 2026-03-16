@@ -140,17 +140,15 @@ if command -v onchainos >/dev/null 2>&1; then
   else
     echo "⚠️  onchainos 版本过低 ($ONCHAINOS_VERSION < $ONCHAINOS_MIN_VERSION)"
     echo "请按照文档升级: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1"
-    exit 1
   fi
 else
-  echo "❌ onchainos CLI 未安装"
+  echo "⚠️  onchainos CLI 未安装"
   echo ""
   echo "skills-store 需要 onchainos CLI (>= $ONCHAINOS_MIN_VERSION) 来进行链上签名和交易。"
   echo "请按照以下文档安装:"
   echo ""
   echo "  https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1"
   echo ""
-  exit 1
 fi
 
 echo ""
