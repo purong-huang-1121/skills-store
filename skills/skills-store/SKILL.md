@@ -233,7 +233,11 @@ TELEGRAM_CHAT_ID=你的ChatID
 安装完成后，**无需重开会话**。直接读取对应的 SKILL.md 文件，按其内容继续引导用户：
 
 ```bash
-Read file: ~/.agents/skills/<skill-name>/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/<skill-name>/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取后按文件中的指令执行（Pre-flight → Post-Install Welcome → 引导配置）。
@@ -383,7 +387,11 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-Read file: ~/.agents/skills/strategy-auto-rebalance/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/strategy-auto-rebalance/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
@@ -409,7 +417,11 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-Read file: ~/.agents/skills/strategy-grid-trade/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/strategy-grid-trade/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
@@ -435,7 +447,11 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-Read file: ~/.agents/skills/strategy-ranking-sniper/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/strategy-ranking-sniper/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
@@ -461,7 +477,11 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-Read file: ~/.agents/skills/strategy-signal-tracker/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/strategy-signal-tracker/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
@@ -487,7 +507,11 @@ export PATH="$HOME/.cargo/bin:$PATH"
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-Read file: ~/.agents/skills/strategy-memepump-scanner/SKILL.md
+```bash
+skill_path=$(find ~ -path "*/.agents/skills/strategy-memepump-scanner/SKILL.md" 2>/dev/null | head -1)
+echo "$skill_path"
+```
+然后 Read file 读取上面命令输出的路径。
 ```
 
 读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
