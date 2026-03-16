@@ -45,6 +45,8 @@ pub enum SignalTrackerCommand {
     },
     /// Market analysis (current signals, wallet types)
     Analyze,
+    /// Show wallet SOL balance
+    Balance,
     /// Show all strategy parameters and file paths
     Config,
     /// Set a config parameter (e.g. signal-tracker set max_positions 8)
@@ -67,6 +69,7 @@ pub async fn execute(cmd: SignalTrackerCommand) -> Result<()> {
         SignalTrackerCommand::History { limit } => cmd_history(limit).await,
         SignalTrackerCommand::Reset { force } => cmd_reset(force).await,
         SignalTrackerCommand::Analyze => cmd_analyze().await,
+        SignalTrackerCommand::Balance => cmd_balance().await,
         SignalTrackerCommand::Config => cmd_config().await,
         SignalTrackerCommand::Set { key, value } => cmd_set(&key, &value).await,
     }
@@ -558,6 +561,26 @@ async fn cmd_tick(dry_run: bool, notifier: &Notifier) -> Result<()> {
         "cumulative_loss_sol": state.stats.cumulative_loss_sol,
         "actions": actions,
         "dry_run": dry_run,
+    }));
+    Ok(())
+}
+
+// ── balance ───────────────────────────────────────────────────────────
+
+async fn cmd_balance() -> Result<()> {
+    let client = SignalClient::new_read_only()?;
+    let wallet = std::env::var("SOL_ADDRESS").unwrap_or_default();
+    let sol = client.fetch_sol_balance().await?;
+    let hint = if sol < 0.1 {
+        format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
+    } else {
+        format!("{:.4} SOL 可用", sol)
+    };
+    output::success(serde_json::json!({
+        "wallet": wallet,
+        "sol_balance": sol,
+        "sufficient": sol >= 0.1,
+        "hint": hint,
     }));
     Ok(())
 }

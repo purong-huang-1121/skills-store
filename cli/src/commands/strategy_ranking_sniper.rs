@@ -67,6 +67,8 @@ pub enum RankingSniperCommand {
         #[arg(long, default_value = "0.01")]
         amount: f64,
     },
+    /// Show wallet SOL balance
+    Balance,
     /// Show all configurable parameters and their current values
     Config,
     /// Force-sell all open positions immediately
@@ -103,6 +105,7 @@ pub async fn execute(cmd: RankingSniperCommand) -> Result<()> {
         RankingSniperCommand::Reset { force } => cmd_reset(force).await,
         RankingSniperCommand::Analyze => cmd_analyze().await,
         RankingSniperCommand::TestTrade { token, amount } => cmd_test_trade(&token, amount).await,
+        RankingSniperCommand::Balance => cmd_balance().await,
         RankingSniperCommand::Config => cmd_config().await,
         RankingSniperCommand::SellAll => cmd_sell_all().await,
         RankingSniperCommand::Sell { token, amount } => cmd_sell(&token, &amount).await,
@@ -119,6 +122,26 @@ fn make_notifier() -> Notifier {
         .telegram_chat_id
         .or_else(|| std::env::var("TELEGRAM_CHAT_ID").ok());
     Notifier::new(token, chat_id, "\u{1f3af} Ranking Sniper")
+}
+
+// ── balance ───────────────────────────────────────────────────────────
+
+async fn cmd_balance() -> Result<()> {
+    let client = SniperClient::new_read_only()?;
+    let wallet = std::env::var("SOL_ADDRESS").unwrap_or_default();
+    let sol = client.fetch_sol_balance().await?;
+    let hint = if sol < 0.1 {
+        format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
+    } else {
+        format!("{:.4} SOL 可用", sol)
+    };
+    output::success(serde_json::json!({
+        "wallet": wallet,
+        "sol_balance": sol,
+        "sufficient": sol >= 0.1,
+        "hint": hint,
+    }));
+    Ok(())
 }
 
 // ── config ────────────────────────────────────────────────────────────

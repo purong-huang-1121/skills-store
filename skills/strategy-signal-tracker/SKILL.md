@@ -163,7 +163,23 @@ SOLANA_PRIVATE_KEY=...   # Solana wallet with SOL
 需要先配置 .env 环境变量才能运行。
 ```
 
-然后询问用户是否已配置 `.env`，如未配置则引导配置（见下方环境变量说明）。
+然后检查 `.env` 是否已配置：
+
+```bash
+grep -q "OKX_API_KEY" ~/.cargo/bin/.env 2>/dev/null && grep -q "SOL_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "configured" || echo "missing"
+```
+
+- 输出 `configured` → 检查余额（见下方）
+- 输出 `missing` → 引导用户配置（见下方环境变量说明）
+
+配置已就绪时，检查钱包余额：
+
+```bash
+strategy-signal-tracker balance
+```
+
+- `sufficient: true` → 直接进入 **Quickstart**，**不再询问用户**
+- `sufficient: false` → 提示用户充值，显示 hint 字段内容，等用户确认后再继续
 
 ## Quickstart
 

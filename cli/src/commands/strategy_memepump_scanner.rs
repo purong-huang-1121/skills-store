@@ -37,6 +37,8 @@ pub enum ScannerCommand {
     },
     /// Run full pipeline without trading -- output filter/signal results
     Analyze,
+    /// Show wallet SOL balance
+    Balance,
     /// Show current configuration
     Config,
     /// Set a configuration parameter
@@ -61,6 +63,7 @@ pub async fn execute(cmd: ScannerCommand) -> Result<()> {
         ScannerCommand::History { limit } => cmd_history(limit).await,
         ScannerCommand::Reset { force } => cmd_reset(force).await,
         ScannerCommand::Analyze => cmd_analyze().await,
+        ScannerCommand::Balance => cmd_balance().await,
         ScannerCommand::Config => cmd_config().await,
         ScannerCommand::Set { key, value } => cmd_set(&key, &value).await,
     }
@@ -1150,6 +1153,26 @@ async fn cmd_analyze() -> Result<()> {
         "signals": signals,
         "layer3_results": layer3_results,
         "would_trade": would_trade,
+    }));
+    Ok(())
+}
+
+// ── balance ───────────────────────────────────────────────────────────
+
+async fn cmd_balance() -> Result<()> {
+    let client = ScannerClient::new_read_only()?;
+    let wallet = std::env::var("SOL_ADDRESS").unwrap_or_default();
+    let sol = client.fetch_sol_balance().await?;
+    let hint = if sol < 0.1 {
+        format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
+    } else {
+        format!("{:.4} SOL 可用", sol)
+    };
+    output::success(serde_json::json!({
+        "wallet": wallet,
+        "sol_balance": sol,
+        "sufficient": sol >= 0.1,
+        "hint": hint,
     }));
     Ok(())
 }

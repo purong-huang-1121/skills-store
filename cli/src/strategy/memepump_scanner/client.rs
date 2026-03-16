@@ -152,6 +152,38 @@ impl ScannerClient {
         }
     }
 
+    /// Fetch SOL balance for the wallet.
+    pub async fn fetch_sol_balance(&self) -> Result<f64> {
+        if self.wallet.is_empty() {
+            bail!("SOL_ADDRESS not set");
+        }
+        let data = self
+            .api
+            .get(
+                "/api/v6/dex/balance/all-token-balances-by-address",
+                &[("address", &*self.wallet), ("chains", CHAIN_INDEX)],
+            )
+            .await?;
+
+        let assets = if let Some(arr) = data.as_array() {
+            arr.first()
+                .and_then(|item| item["tokenAssets"].as_array())
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            data["tokenAssets"].as_array().cloned().unwrap_or_default()
+        };
+
+        for b in &assets {
+            let sym = b["symbol"].as_str().unwrap_or("");
+            let contract = b["tokenContractAddress"].as_str().unwrap_or("");
+            if sym == "SOL" || contract == SOL_NATIVE {
+                return Ok(safe_float(&b["balance"], 0.0));
+            }
+        }
+        Ok(0.0)
+    }
+
     // ── Swap execution ──────────────────────────────────────────────
 
     /// Execute a swap via OKX DEX aggregator.
