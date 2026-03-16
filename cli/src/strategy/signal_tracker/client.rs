@@ -371,7 +371,6 @@ impl SignalClient {
     }
 }
 
-const SOLANA_RPC: &str = "https://api.mainnet-beta.solana.com";
 
 /// Sign a Solana serialized transaction.
 fn sign_solana_transaction(
@@ -408,42 +407,6 @@ fn sign_solana_transaction(
     Ok(signed)
 }
 
-/// Replace the blockhash in a Solana transaction's message.
-/// Supports both legacy and versioned (v0) transactions.
-fn replace_blockhash(tx_bytes: &mut [u8], new_blockhash: &[u8]) -> Result<()> {
-    if new_blockhash.len() != 32 {
-        bail!("blockhash must be 32 bytes");
-    }
-
-    let (num_sigs, sig_header_len) = decode_compact_u16(tx_bytes)?;
-    let msg_start = sig_header_len + (num_sigs as usize) * 64;
-
-    if msg_start >= tx_bytes.len() {
-        bail!("transaction too short for message");
-    }
-
-    let msg = &tx_bytes[msg_start..];
-
-    // Detect versioned (v0) vs legacy: high bit set = versioned
-    let version_offset = if msg[0] & 0x80 != 0 { 1 } else { 0 };
-
-    if msg.len() < version_offset + 3 {
-        bail!("transaction too short for message header");
-    }
-
-    let header_end = version_offset + 3;
-    let (num_accounts, accounts_header_len) = decode_compact_u16(&msg[header_end..])?;
-    let accounts_start = header_end + accounts_header_len;
-    let accounts_end = accounts_start + (num_accounts as usize) * 32;
-
-    let bh_offset = msg_start + accounts_end;
-    if bh_offset + 32 > tx_bytes.len() {
-        bail!("transaction too short for blockhash at offset {bh_offset}");
-    }
-
-    tx_bytes[bh_offset..bh_offset + 32].copy_from_slice(new_blockhash);
-    Ok(())
-}
 
 /// Decode a Solana compact-u16 from a byte slice.
 fn decode_compact_u16(data: &[u8]) -> Result<(u16, usize)> {
