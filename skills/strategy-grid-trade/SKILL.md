@@ -161,7 +161,14 @@ strategy-grid start
 需要先配置 .env 环境变量才能运行。
 ```
 
-然后询问用户是否已配置 `.env`，如未配置则引导配置（见下方环境变量说明）。
+然后检查 `.env` 是否已配置：
+
+```bash
+grep -q "OKX_API_KEY" ~/.cargo/bin/.env 2>/dev/null && grep -q "EVM_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "configured" || echo "missing"
+```
+
+- 输出 `configured` → 直接进入 **Quickstart**，**不再询问用户**
+- 输出 `missing` → 引导用户配置（见下方环境变量说明）
 
 ## Quickstart
 
