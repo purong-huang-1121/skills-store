@@ -1,124 +1,113 @@
-# plugin-store Skills
+# skills-store
 
-plugin-store skills for AI coding assistants. Provides token search, market data, wallet balance queries, swap execution, and transaction broadcasting across 20+ blockchains.
+链上 DeFi 智能体技能包，集成主流协议操作与自动化交易策略。支持 Claude Code、OpenClaw 等 AI 编程助手。
 
-## Available Skills
+## 包含技能
 
-| Skill | Description |
-|-------|-------------|
-| `okx-wallet-portfolio` | Wallet balance, token holdings, portfolio value |
-| `okx-dex-market` | Real-time prices, K-line charts, trade history, index prices, smart money signals, meme pump scanning |
-| `okx-dex-swap` | Token swap via DEX aggregation (500+ liquidity sources) |
-| `okx-dex-token` | Token search, metadata, market cap, rankings, holder analysis |
-| `okx-onchain-gateway` | Gas estimation, transaction simulation, broadcasting, order tracking |
-| `polymarket` | Prediction market search, pricing, orderbook, and trading (Polymarket) |
+### 核心技能（dApp 协议集成）
 
-## Supported Chains
+`skills-store` 是主入口技能，整合以下所有协议能力：
 
-XLayer, Solana, Ethereum, Base, BSC, Arbitrum, Polygon, and 20+ other chains.
+| 协议 | 功能 |
+|------|------|
+| **Aave V3** | 查看市场、账户信息、存款、取款、借款、还款 |
+| **Morpho Blue** | 市场列表、MetaMorpho 金库、存取款、持仓查询 |
+| **Uniswap V3** | 链上代币兑换、报价、Token 搜索 |
+| **Hyperliquid** | 永续合约/现货交易、资金费率、仓位管理 |
+| **Ethena** | sUSDe 质押/赎回、APY 查询、余额 |
+| **Polymarket** | 预测市场搜索、报价、买卖份额 |
+| **Kalshi** | 美国合规预测市场、活动/市场浏览、交易 |
+| **dapp-composer** | 跨协议组合操作、多步骤 DeFi 工作流 |
 
-## Prerequisites
+### 自动化策略技能
 
-All skills require OKX API credentials. Apply at [OKX Developer Portal](https://web3.okx.com/onchain-os/dev-portal).
+| 技能 | 子命令 | 描述 |
+|------|--------|------|
+| `strategy-auto-rebalance` | `auto-rebalance` | USDC 跨协议（Aave/Compound/Morpho）自动调仓，Base/Ethereum |
+| `strategy-grid-trade` | `grid` | ETH/USDC 网格交易机器人，Base 链 |
+| `strategy-ranking-sniper` | `ranking-sniper` | SOL 排行榜狙击策略，3 层安全过滤 + 6 层出场体系 |
+| `strategy-signal-tracker` | `signal-tracker` | 聪明钱/KOL/巨鲸信号跟单，17 点安全过滤 |
+| `strategy-memepump-scanner` | `scanner` | Pump.fun 迁移代币自动扫描交易，3 信号动量检测 |
 
-Recommended: create a `.env` file in your project root:
+## 快速安装
+
+### 推荐方式（npx）
 
 ```bash
+npx skills add skills-store
+```
+
+支持 Claude Code、OpenClaw、Cursor、Codex CLI 等环境，自动检测安装路径。
+
+### Shell 脚本安装 CLI（macOS / Linux）
+
+```bash
+curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
+```
+
+自动检测平台，下载对应二进制，验证 SHA256，安装至 `~/.cargo/bin/skills-store`。
+
+## 配置
+
+### OKX API（必须）
+
+策略技能需要 OKX API 凭证，在 [OKX 开发者平台](https://web3.okx.com/onchain-os/dev-portal) 申请。
+
+配置至 `~/.cargo/bin/.env`：
+
+```env
 OKX_API_KEY="your-api-key"
 OKX_SECRET_KEY="your-secret-key"
 OKX_PASSPHRASE="your-passphrase"
 ```
 
-**Security warning**: Never commit `.env` to git (add it to `.gitignore`) and never expose credentials in logs, screenshots, or chat messages.
+未配置时自动使用内置公共密钥（限速、不稳定，仅用于评估）。
 
-### Quick Start — Try It Now
+### 钱包私钥（SOL/EVM 策略必须）
 
-Want to try the skills right away? Use the shared API key below:
+```env
+# SOL 策略（ranking-sniper / signal-tracker / memepump-scanner）
+SOL_PRIVATE_KEY="your-solana-private-key-base58"
+SOL_ADDRESS="your-solana-address"
 
-```bash
-OKX_API_KEY="03f0b376-251c-4618-862e-ae92929e0416"
-OKX_SECRET_KEY="652ECE8FF13210065B0851FFDA9191F7"
-OKX_PASSPHRASE="onchainOS#666"
+# EVM 策略（auto-rebalance / grid-trade）
+EVM_PRIVATE_KEY="0x your-evm-private-key"
+EVM_ADDRESS="0x your-evm-address"
 ```
 
-## Installation
+### Telegram 通知（可选）
 
-### Recommended
-
-```bash
-npx skills add okx/plugin-store-skills
+```env
+TELEGRAM_BOT_TOKEN="your-bot-token"
+TELEGRAM_CHAT_ID="your-chat-id"
 ```
 
-Works with Claude Code, Cursor, Codex CLI, and OpenCode. Auto-detects your environment and installs accordingly.
+## 支持链
 
-### Claude Code
+Solana、Ethereum、Base、BSC、Arbitrum、Polygon、XLayer 及 20+ 其他链。
 
-```bash
-# Run in Claude Code
-/plugin marketplace add okx/plugin-store-skills
-/plugin install plugin-store-skills
-```
+## 使用示例
 
-### Codex CLI
+**查询 Aave 市场利率**
+> "查一下 Aave 上 USDC 的供款利率"
 
-Tell Codex:
+**开启排行榜狙击策略**
+> "帮我启动 SOL 排行榜狙击"
 
-```plain
-Fetch and follow instructions from https://raw.githubusercontent.com/okx/plugin-store-skills/refs/heads/main/.codex/INSTALL.md
-```
+**查看策略钱包余额**
+> `skills-store ranking-sniper balance`
 
-### OpenCode
+**网格交易**
+> "帮我在 Base 上开一个 ETH/USDC 网格策略"
 
-Tell OpenCode:
+**聪明钱跟单**
+> "帮我启动聪明钱信号跟单策略"
 
-```plain
-Fetch and follow instructions from https://raw.githubusercontent.com/okx/plugin-store-skills/refs/heads/main/.opencode/INSTALL.md
-```
+## 免责声明
 
-## Skill Workflows
-
-The skills work together in typical DeFi flows:
-
-**Search and Buy**: `okx-dex-token` (find token) -> `okx-wallet-portfolio` (check funds) -> `okx-dex-swap` (execute trade)
-
-**Portfolio Overview**: `okx-wallet-portfolio` (holdings) -> `okx-dex-token` (enrich with analytics) -> `okx-dex-market` (price charts)
-
-**Market Research**: `okx-dex-token` (trending/rankings) -> `okx-dex-market` (candles/history) -> `okx-dex-swap` (trade)
-
-**Swap and Broadcast**: `okx-dex-swap` (get tx data) -> sign locally -> `okx-onchain-gateway` (broadcast) -> `okx-onchain-gateway` (track order)
-
-**Pre-flight Check**: `okx-onchain-gateway` (estimate gas) -> `okx-onchain-gateway` (simulate tx) -> `okx-onchain-gateway` (broadcast) -> `okx-onchain-gateway` (track order)
-
-**Full Trading Flow**: `okx-dex-token` (search) -> `okx-dex-market` (price/chart) -> `okx-wallet-portfolio` (check balance) -> `okx-dex-swap` (get tx) -> `okx-onchain-gateway` (simulate + broadcast + track)
-
-**Prediction Market Trading**: `polymarket` (search market) -> `polymarket` (check price) -> `polymarket` (buy shares)
-
-## Install CLI
-
-### Shell Script (macOS / Linux)
-
-Auto-detects your platform, downloads the matching binary, verifies SHA256 checksum, and installs to `/usr/local/bin`:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/okx/plugin-store-skills/main/install.sh | sh
-```
-
-## API Key Security Notice & Disclaimer
-
-**Built-in Sandbox API Keys (Default)** This integration includes built-in sandbox API keys for testing purposes only. By using these keys, you acknowledge and accept the following:
-
-* These keys are shared and may be subject to rate limiting, quota exhaustion, or unexpected behavior at any time without prior notice.
-* Any Agent execution errors, failures, financial losses, or data inaccuracies arising from the use of built-in keys are solely your responsibility.
-* We expressly disclaim all liability for any direct, indirect, incidental, or consequential damages resulting from the use of built-in sandbox keys in production or quasi-production environments.
-* Built-in keys are strictly intended for local testing and evaluation only. Do not use them in production environments or with real assets.
-
-**Production Usage (Recommended)** For stable and reliable production usage, you must provide your own API credentials by setting the following environment variables:
-
-* `OKX_API_KEY`
-* `OKX_SECRET_KEY`
-* `OKX_PASSPHRASE`
-
-You are solely responsible for the security, confidentiality, and proper management of your own API keys. We shall not be liable for any unauthorized access, asset loss, or damages resulting from improper key management on your part.
+- 内置公共 API Key 仅供测试评估，可能随时限速或不可用，由此产生的任何损失概不负责
+- 自动化交易策略涉及真实资产，请充分了解风险后使用
+- 生产环境请务必使用自己的 API Key 和钱包私钥，并妥善保管
 
 ## License
 
