@@ -1,4 +1,8 @@
-//! GridClient — OKX DEX quote/swap/approve + alloy signing + RPC broadcast.
+//! GridClient — OKX DEX quote/swap/approve + signing + RPC broadcast.
+//!
+//! Supports two signing modes:
+//! - **Local**: alloy PrivateKeySigner (legacy, unused)
+//! - **OnchainOs**: onchainos wallet CLI (TEE signing)
 
 use alloy::network::{EthereumWallet, TransactionBuilder};
 use alloy::primitives::{Address, Bytes, U256};
@@ -10,13 +14,21 @@ use serde_json::Value;
 use std::str::FromStr;
 
 use super::config::GridConfig;
-use super::engine::{BASE_RPC, CHAIN_ID, ETH_ADDR, USDC_ADDR, USDC_DECIMALS};
-use crate::client::ApiClient;
+use super::engine::{BASE_RPC, ETH_ADDR, USDC_ADDR, USDC_DECIMALS};
+
+enum SignerMode {
+    Local {
+        signer: PrivateKeySigner,
+        address: Address,
+    },
+    OnchainOs {
+        address: Address,
+        chain_flag: String,
+    },
+}
 
 pub struct GridClient {
-    api: ApiClient,
-    signer: PrivateKeySigner,
-    address: Address,
+    signer_mode: SignerMode,
     rpc_url: String,
     slippage_pct: String,
 }
@@ -39,27 +51,33 @@ pub struct FailureInfo {
 
 impl GridClient {
     /// Create a fully authenticated client.
+    /// Create a fully authenticated client via onchainos wallet.
     pub fn new() -> Result<Self> {
-        let api = ApiClient::new(None)?;
-
-        let pk = std::env::var("EVM_PRIVATE_KEY")
-            .context("EVM_PRIVATE_KEY not set — required for grid trading")?;
-        let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-        let signer: PrivateKeySigner = pk.parse().context("invalid EVM_PRIVATE_KEY")?;
-        let address = signer.address();
-
         let rpc_url = std::env::var("BASE_RPC_URL").unwrap_or_else(|_| BASE_RPC.to_string());
-
         let cfg = GridConfig::load().unwrap_or_default();
         let slippage_pct = cfg.slippage_pct;
 
-        Ok(Self {
-            api,
-            signer,
+        let addr_str = crate::onchainos::get_evm_address()
+            .context("onchainos wallet not available — please login first")?;
+        let address = Address::from_str(&addr_str).context("invalid onchainos EVM address")?;
+        let chain_flag = crate::onchainos::chain_flag("base").to_string();
+        let signer_mode = SignerMode::OnchainOs {
             address,
+            chain_flag,
+        };
+
+        Ok(Self {
+            signer_mode,
             rpc_url,
             slippage_pct,
         })
+    }
+
+    fn wallet_address(&self) -> Address {
+        match &self.signer_mode {
+            SignerMode::Local { address, .. } => *address,
+            SignerMode::OnchainOs { address, .. } => *address,
+        }
     }
 
     /// Build a read-only provider (no wallet).
@@ -68,34 +86,14 @@ impl GridClient {
         Ok(provider)
     }
 
-    /// Build a wallet-enabled provider for signing transactions.
-    fn wallet_provider(&self) -> Result<impl Provider> {
-        let wallet = EthereumWallet::from(self.signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
-        Ok(provider)
-    }
-
     #[allow(dead_code)]
     pub fn address(&self) -> Address {
-        self.address
+        self.wallet_address()
     }
 
-    /// Get ETH/USDC price via OKX DEX aggregator quote API.
+    /// Get ETH/USDC price via onchainos swap quote CLI.
     pub async fn get_eth_price(&self) -> Result<f64> {
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/aggregator/quote",
-                &[
-                    ("chainIndex", CHAIN_ID),
-                    ("fromTokenAddress", ETH_ADDR),
-                    ("toTokenAddress", USDC_ADDR),
-                    ("amount", "1000000000000000000"), // 1 ETH in wei
-                ],
-            )
-            .await?;
+        let data = crate::onchainos::swap_quote(ETH_ADDR, USDC_ADDR, "1000000000000000000", "base", None)?;
 
         let quote = if data.is_array() {
             data.as_array()
@@ -113,19 +111,39 @@ impl GridClient {
         Ok(price)
     }
 
-    /// Get on-chain balances via alloy RPC.
+    /// Get on-chain balances.
+    /// Uses onchainos wallet balance when available; falls back to RPC.
     pub async fn get_balances(&self) -> Result<(f64, f64)> {
+        // Try onchainos balance query first
+        if matches!(self.signer_mode, SignerMode::OnchainOs { .. }) {
+            if let Ok(balances) = crate::onchainos::get_token_balances("base") {
+                let eth_bal = balances
+                    .iter()
+                    .find(|b| b.symbol.eq_ignore_ascii_case("ETH"))
+                    .map(|b| b.balance)
+                    .unwrap_or(0.0);
+                let usdc_bal = balances
+                    .iter()
+                    .find(|b| b.symbol.eq_ignore_ascii_case("USDC"))
+                    .map(|b| b.balance)
+                    .unwrap_or(0.0);
+                return Ok((eth_bal, usdc_bal));
+            }
+            // Fall through to RPC on failure
+        }
+
         let provider = self.read_provider()?;
+        let addr = self.wallet_address();
 
         // ETH balance
-        let eth_wei = provider.get_balance(self.address).await?;
+        let eth_wei = provider.get_balance(addr).await?;
         let eth_bal = wei_to_f64(eth_wei, 18);
 
         // USDC balance via balanceOf call
         let usdc_addr = Address::from_str(USDC_ADDR)?;
         let mut calldata = vec![0x70, 0xa0, 0x82, 0x31]; // balanceOf(address)
         calldata.extend_from_slice(&[0u8; 12]);
-        calldata.extend_from_slice(self.address.as_slice());
+        calldata.extend_from_slice(addr.as_slice());
 
         let tx = TransactionRequest::default()
             .to(usdc_addr)
@@ -152,28 +170,15 @@ impl GridClient {
         };
 
         let amount_str = amount.to_string();
-        let wallet_str = format!("{:#x}", self.address);
+        let wallet_str = format!("{:#x}", self.wallet_address());
 
         // For BUY (USDC->ETH), ensure USDC approval first
         if direction == "BUY" {
             self.ensure_usdc_approval(&amount_str).await?;
         }
 
-        // Get swap tx from OKX API
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/aggregator/swap",
-                &[
-                    ("chainIndex", CHAIN_ID),
-                    ("fromTokenAddress", from_token),
-                    ("toTokenAddress", to_token),
-                    ("amount", &amount_str),
-                    ("slippagePercent", &self.slippage_pct),
-                    ("userWalletAddress", &wallet_str),
-                ],
-            )
-            .await?;
+        // Get swap tx from onchainos swap CLI
+        let data = crate::onchainos::swap_swap(from_token, to_token, &amount_str, "base", &wallet_str, Some(&self.slippage_pct))?;
 
         let swap_data = if data.is_array() {
             data.as_array()
@@ -225,19 +230,9 @@ impl GridClient {
         })
     }
 
-    /// Get the OKX DEX router (spender) address from approve-transaction API.
+    /// Get the DEX router (spender) address from onchainos swap approve CLI.
     async fn get_dex_router(&self) -> Result<Address> {
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/aggregator/approve-transaction",
-                &[
-                    ("chainIndex", CHAIN_ID),
-                    ("tokenContractAddress", USDC_ADDR),
-                    ("approveAmount", "1000000"), // 1 USDC, just to get router address
-                ],
-            )
-            .await?;
+        let data = crate::onchainos::swap_approve(USDC_ADDR, "1000000", "base")?;
 
         let approve_data = if data.is_array() {
             data.as_array()
@@ -255,18 +250,18 @@ impl GridClient {
         Address::from_str(spender_str).context("invalid spender address")
     }
 
-    /// Ensure USDC approval for the DEX router using alloy directly.
+    /// Ensure USDC approval for the DEX router.
     /// Checks current allowance first; only approves if needed.
     async fn ensure_usdc_approval(&self, amount: &str) -> Result<()> {
-        let provider = self.wallet_provider()?;
         let usdc_addr = Address::from_str(USDC_ADDR)?;
         let spender = self.get_dex_router().await?;
         let needed = U256::from_str(amount).unwrap_or(U256::ZERO);
+        let addr = self.wallet_address();
 
-        // Check current allowance: allowance(owner, spender)
+        // Check current allowance (read-only)
         let mut calldata = vec![0xdd, 0x62, 0xed, 0x3e]; // allowance(address,address)
         calldata.extend_from_slice(&[0u8; 12]);
-        calldata.extend_from_slice(self.address.as_slice());
+        calldata.extend_from_slice(addr.as_slice());
         calldata.extend_from_slice(&[0u8; 12]);
         calldata.extend_from_slice(spender.as_slice());
 
@@ -293,29 +288,48 @@ impl GridClient {
         approve_data.extend_from_slice(spender.as_slice());
         approve_data.extend_from_slice(&U256::MAX.to_be_bytes::<32>());
 
-        let tx_request = TransactionRequest::default()
-            .to(usdc_addr)
-            .value(U256::ZERO)
-            .input(Bytes::from(approve_data).into())
-            .gas_limit(60_000)
-            .with_chain_id(8453);
+        match &self.signer_mode {
+            SignerMode::Local { signer, .. } => {
+                let wallet = EthereumWallet::from(signer.clone());
+                let provider = ProviderBuilder::new()
+                    .wallet(wallet)
+                    .connect_http(self.rpc_url.parse()?);
 
-        let pending = provider
-            .send_transaction(tx_request)
-            .await
-            .context("failed to send USDC approve tx")?;
+                let tx_request = TransactionRequest::default()
+                    .to(usdc_addr)
+                    .value(U256::ZERO)
+                    .input(Bytes::from(approve_data).into())
+                    .gas_limit(60_000)
+                    .with_chain_id(8453);
 
-        let tx_hash = format!("{:#x}", pending.tx_hash());
-        let receipt = pending
-            .get_receipt()
-            .await
-            .context("failed to get approve receipt")?;
+                let pending = provider
+                    .send_transaction(tx_request)
+                    .await
+                    .context("failed to send USDC approve tx")?;
 
-        if !receipt.status() {
-            bail!("USDC approve transaction {} reverted", tx_hash);
+                let tx_hash = format!("{:#x}", pending.tx_hash());
+                let receipt = pending
+                    .get_receipt()
+                    .await
+                    .context("failed to get approve receipt")?;
+
+                if !receipt.status() {
+                    bail!("USDC approve transaction {} reverted", tx_hash);
+                }
+                eprintln!("[grid] USDC approved (tx: {})", tx_hash);
+            }
+            SignerMode::OnchainOs { chain_flag, .. } => {
+                let tx_hash = crate::onchainos::contract_call(
+                    chain_flag,
+                    &format!("{}", usdc_addr),
+                    &format!("0x{}", hex::encode(&approve_data)),
+                    "0",
+                )
+                .await?;
+                eprintln!("[grid] USDC approved via onchainos (tx: {})", tx_hash);
+            }
         }
 
-        eprintln!("[grid] USDC approved (tx: {})", tx_hash);
         Ok(())
     }
 
@@ -323,8 +337,6 @@ impl GridClient {
     /// tx_obj has fields: to, data, value, gas/gasLimit
     /// Returns (tx_hash, success).
     async fn sign_and_broadcast(&self, tx_obj: &Value) -> Result<(String, bool)> {
-        let provider = self.wallet_provider()?;
-
         let to_addr = tx_obj["to"]
             .as_str()
             .or_else(|| tx_obj["dexContractAddress"].as_str())
@@ -338,33 +350,65 @@ impl GridClient {
             .or_else(|| tx_obj["gasLimit"].as_str())
             .unwrap_or("300000");
 
-        let to = Address::from_str(to_addr)?;
-        let value = U256::from_str(tx_value).unwrap_or(U256::ZERO);
-        let data_bytes = hex::decode(tx_data.strip_prefix("0x").unwrap_or(tx_data))?;
-        // Add 50% gas buffer to avoid reverts on complex DEX routes
-        let gas = (gas_limit.parse::<u64>().unwrap_or(300_000) as f64 * 1.5) as u64;
+        match &self.signer_mode {
+            SignerMode::Local { signer, .. } => {
+                let wallet = EthereumWallet::from(signer.clone());
+                let provider = ProviderBuilder::new()
+                    .wallet(wallet)
+                    .connect_http(self.rpc_url.parse()?);
 
-        let tx_request = TransactionRequest::default()
-            .to(to)
-            .value(value)
-            .input(Bytes::from(data_bytes).into())
-            .gas_limit(gas)
-            .with_chain_id(8453);
+                let to = Address::from_str(to_addr)?;
+                let value = U256::from_str(tx_value).unwrap_or(U256::ZERO);
+                let data_bytes =
+                    hex::decode(tx_data.strip_prefix("0x").unwrap_or(tx_data))?;
+                let gas = (gas_limit.parse::<u64>().unwrap_or(300_000) as f64 * 1.5) as u64;
 
-        // The wallet provider handles nonce, gas price, signing, and broadcasting
-        let pending = provider
-            .send_transaction(tx_request)
-            .await
-            .context("failed to send transaction")?;
+                let tx_request = TransactionRequest::default()
+                    .to(to)
+                    .value(value)
+                    .input(Bytes::from(data_bytes).into())
+                    .gas_limit(gas)
+                    .with_chain_id(8453);
 
-        let tx_hash = format!("{:#x}", pending.tx_hash());
+                let pending = provider
+                    .send_transaction(tx_request)
+                    .await
+                    .context("failed to send transaction")?;
 
-        let receipt = pending
-            .get_receipt()
-            .await
-            .context("failed to get receipt")?;
+                let tx_hash = format!("{:#x}", pending.tx_hash());
+                let receipt = pending
+                    .get_receipt()
+                    .await
+                    .context("failed to get receipt")?;
 
-        Ok((tx_hash, receipt.status()))
+                Ok((tx_hash, receipt.status()))
+            }
+            SignerMode::OnchainOs { chain_flag, .. } => {
+                // Convert value from wei to UI units for onchainos --value
+                let value_ui = if tx_value == "0" || tx_value.is_empty() {
+                    "0".to_string()
+                } else {
+                    let wei = U256::from_str(tx_value).unwrap_or(U256::ZERO);
+                    wei_to_f64(wei, 18).to_string()
+                };
+
+                let input_data = if tx_data.starts_with("0x") {
+                    tx_data.to_string()
+                } else {
+                    format!("0x{}", tx_data)
+                };
+
+                let tx_hash = crate::onchainos::contract_call(
+                    chain_flag,
+                    to_addr,
+                    &input_data,
+                    &value_ui,
+                )
+                .await?;
+
+                Ok((tx_hash, true))
+            }
+        }
     }
 }
 

@@ -112,30 +112,25 @@ which strategy-ranking-sniper
 +---------------------------------------------------------------------------+
 ```
 
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 1.0.5
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
+
+2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
+
 ## Authentication
 
-Requires two sets of credentials:
-
-**OKX API (for ranking data + swap execution):**
-```bash
-OKX_API_KEY=...
-OKX_SECRET_KEY=...
-OKX_PASSPHRASE=...
-```
-
-**Solana Wallet (for on-chain signing and swap):**
-```bash
-SOL_ADDRESS=...          # Solana wallet public address
-SOL_PRIVATE_KEY=...      # Solana wallet private key (base58, 32 or 64 bytes)
-```
-
-**Optional:**
-```bash
-TELEGRAM_BOT_TOKEN=...   # Telegram bot token for trade/error notifications
-TELEGRAM_CHAT_ID=...     # Telegram chat ID for alerts
-```
-
-Telegram credentials can also be set in the config file (`~/.skills-store/ranking_sniper_config.json`).
+- **OKX API**: Handled by onchainos CLI internally
+- **Solana Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
 
 ## Before Starting the Bot
 
@@ -183,17 +178,22 @@ strategy-ranking-sniper start --budget 0.5 --per-trade 0.05 --dry-run
 支持链：Solana
 预估收益：高波动，视市场而定
 
-需要先配置 .env 环境变量才能运行。
+需要 onchainos 钱包登录后才能运行。
 ```
 
-然后检查 `.env` 是否已配置：
+### Pre-start Checks
 
-```bash
-grep -q "OKX_API_KEY" ~/.cargo/bin/.env 2>/dev/null && grep -q "SOL_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "configured" || echo "missing"
-```
+Before starting the daemon, check:
 
-- 输出 `configured` → 检查余额（见下方）
-- 输出 `missing` → 引导用户配置（见下方环境变量说明）
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
+   ```bash
+   cat ~/.cargo/bin/.env
+   ```
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
 
 配置已就绪时，检查钱包余额：
 
@@ -246,7 +246,7 @@ strategy-ranking-sniper sell-all
 | 11 | `strategy-ranking-sniper sell-all` | Yes | Force-sell all open positions immediately |
 | 12 | `strategy-ranking-sniper sell` | Yes | Sell a specific token by address |
 
-*Analyze requires OKX API keys for ranking data but not SOL_PRIVATE_KEY.
+*Analyze requires onchainos wallet for ranking data.
 
 ## Core Strategy
 
@@ -806,8 +806,7 @@ State includes:
 | Sell fails (insufficient liquidity) | `sell-all` retries with halved amounts (up to 4x) |
 | Advanced-info API fails | Token skipped with reason |
 | Price fetch fails | Position exit check skipped for that token |
-| SOL_ADDRESS not set | Error on tick/start/sell commands |
-| SOL_PRIVATE_KEY not set | Error on swap execution (buy/sell) |
+| onchainos wallet not available | Error on tick/start/sell commands — please login first |
 | Bot already running | `start` rejects with existing PID warning |
 | No running bot | `stop` returns error |
 | Reset without --force | Returns error, requires confirmation |
@@ -822,8 +821,7 @@ State includes:
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| "SOL_ADDRESS not set" | Missing env var | Set `SOL_ADDRESS` to your Solana wallet address |
-| "SOL_PRIVATE_KEY not set" | Missing env var | Set `SOL_PRIVATE_KEY` (base58, 32 or 64 bytes) |
+| "onchainos wallet not available" | Not logged in | Run `onchainos wallet status` and login if needed |
 | Circuit breaker trips | Repeated API/swap failures | Check logs at `~/.skills-store/ranking_sniper.log`, fix root cause, wait 1h or reset |
 | No buys happening | Score threshold too high, or safety filters too strict | Try `--dry-run` to see skip reasons, adjust config thresholds |
 | All tokens skipped by slot_guard | Thresholds set to production values | For testing, lower `min_change_pct`, `min_liquidity`, `min_holders`, etc. |
@@ -836,8 +834,8 @@ State includes:
 
 ## Security Notes
 
-- **Private key**: Loaded from `SOL_PRIVATE_KEY` env var, used only for transaction signing, never logged
-- **API auth**: HMAC-SHA256 via OKX ApiClient, keys only in HTTP headers
+- **Wallet signing**: onchainos wallet (TEE signing) — private keys never leave the secure enclave
+- **API auth**: Handled by onchainos CLI internally
 - **Atomic state writes**: Write to `.tmp` file then rename to prevent corruption
 - **Fail-closed**: API failures result in skipping the token, not proceeding with partial data
 - **Capital controls**: Budget tracking, position limits, daily loss limits, and circuit breaker prevent runaway losses

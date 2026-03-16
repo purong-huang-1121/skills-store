@@ -113,21 +113,24 @@ which strategy-auto-rebalance
 支持链：Base（推荐）/ Ethereum
 预估年化：3%~8%
 
-需要先配置 .env 环境变量（EVM_PRIVATE_KEY 等）才能运行。
+需要 onchainos 钱包登录后才能运行。
 ```
+
+### Pre-start Checks
+
+Before starting the daemon, check:
+
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
+   ```bash
+   cat ~/.cargo/bin/.env
+   ```
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
 
 然后询问用户选择链（Base / Ethereum）。
-
-检查 `.env` 配置（用 grep，不要用 python/其他方式）：
-
-```bash
-grep -q "EVM_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "found" || echo "not found"
-```
-
-- **found** → 直接进入 Pre-Start Confirmation，展示启动参数确认表格。
-- **not found** → 引导用户创建/编辑 `~/.cargo/bin/.env`，写入 `EVM_PRIVATE_KEY=0x你的私钥`，完成后再进入 Pre-Start Confirmation。
-
-**不要用 python3、source、export 等方式检测环境变量。binary 会通过 dotenvy 自动加载 `.env`，只需确认文件里有该 key 即可。**
 
 ## Pre-Start Confirmation
 
@@ -155,7 +158,7 @@ Proceed? (y/n)
 ```
 
 Key points to verify:
-- Wallet address derived from `EVM_PRIVATE_KEY` — confirm it's the intended wallet
+- Wallet address from onchainos wallet — confirm it's the intended wallet
 - Chain — confirm it matches user intent (Base vs Ethereum have very different gas costs)
 - Interval — explain what it means in practical terms ("checks every X minutes")
 - Min spread — lower = more frequent rebalancing; higher = fewer but more meaningful moves
@@ -169,21 +172,25 @@ Key points to verify:
 - For prediction markets → use `skills-store polymarket` / `skills-store kalshi`
 - For perpetual trading → use `skills-store hyperliquid`
 
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 1.0.5
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
+
+2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
+
 ## Authentication
 
-**All commands require an EVM wallet private key** (except `stop` and `status`):
-
-```bash
-EVM_PRIVATE_KEY=0x...
-```
-
-**Optional — Telegram notifications (recommended):**
-```bash
-TELEGRAM_BOT_TOKEN=...
-TELEGRAM_CHAT_ID=...
-```
-
-All env vars can be set in `~/.cargo/bin/.env` (auto-loaded from the binary's directory via dotenvy).
+- **EVM Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
+- **OKX API**: Handled by onchainos CLI internally
 
 ## Multi-Chain Support
 
@@ -339,7 +346,7 @@ Note: each chain uses the same PID file, so only one daemon instance can run at 
 | Wallet has idle USDC, no position | Auto-deposits into best protocol on first cycle |
 | Break-even too long | Hold — not worth the gas cost |
 | Rebalanced recently (<24h ago) | Hold — cooldown enforced to prevent over-trading |
-| EVM_PRIVATE_KEY not set | Error on start |
+| onchainos wallet not available | Error on start — please login first |
 | Daemon already running | Start rejects with existing PID warning |
 | No running daemon | Stop returns error |
 | TVL drops 20-30% (median) | Alert notification sent, rebalancing NOT blocked |

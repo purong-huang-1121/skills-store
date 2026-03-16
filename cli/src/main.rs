@@ -74,18 +74,6 @@ pub enum Commands {
 
 #[tokio::main]
 async fn main() {
-    // Load .env from current directory
-    dotenvy::dotenv().ok();
-    // Also load .env from executable directory (for deployed binary)
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let env_path = dir.join(".env");
-            if env_path.exists() {
-                dotenvy::from_path(&env_path).ok();
-            }
-        }
-    }
-
     let cli = Cli::parse();
 
     let result = match cli.command {

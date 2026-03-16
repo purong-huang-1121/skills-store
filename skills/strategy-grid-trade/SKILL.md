@@ -85,27 +85,29 @@ which strategy-grid
     ```
     Stop here until user confirms installation.
 
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 1.0.5
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
+
+2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
+
 ## Authentication
 
-Requires two sets of credentials:
+- **OKX API**: Handled by onchainos CLI internally
+- **EVM Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
 
-**OKX API (for price quotes and swap execution):**
-```bash
-OKX_API_KEY=...
-OKX_SECRET_KEY=...
-OKX_PASSPHRASE=...
-```
-
-**EVM Wallet (for on-chain signing):**
-```bash
-EVM_PRIVATE_KEY=0x...   # Base wallet with ETH + USDC
-```
-
-**Optional:**
+**Optional env vars** in `~/.cargo/bin/.env`:
 ```bash
 BASE_RPC_URL=...        # Custom Base RPC (default: public endpoint)
-TELEGRAM_BOT_TOKEN=...  # Telegram notifications on trade/error
-TELEGRAM_CHAT_ID=...    # Telegram chat ID for alerts
 ```
 
 ## Before Starting the Bot
@@ -158,17 +160,24 @@ strategy-grid start
 支持链：Base
 预估收益：10%~30%
 
-需要先配置 .env 环境变量才能运行。
+需要 onchainos 钱包登录后才能运行。
 ```
 
-然后检查 `.env` 是否已配置：
+### Pre-start Checks
 
-```bash
-grep -q "OKX_API_KEY" ~/.cargo/bin/.env 2>/dev/null && grep -q "EVM_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "configured" || echo "missing"
-```
+Before starting the daemon, check:
 
-- 输出 `configured` → 直接进入 **Quickstart**，**不再询问用户**
-- 输出 `missing` → 引导用户配置（见下方环境变量说明）
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
+   ```bash
+   cat ~/.cargo/bin/.env
+   ```
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
+
+Checks passed → 直接进入 **Quickstart**，**不再询问用户**
 
 ## Quickstart
 
@@ -400,7 +409,7 @@ State is stored at `~/.skills-store/grid_state.json` with atomic writes (write t
 | 5 consecutive errors | Circuit breaker trips, 1-hour cooldown |
 | Trade amount < $5 | Skipped (below minimum) |
 | ETH balance < 0.003 | Gas reserve protected, SELL blocked |
-| No EVM_PRIVATE_KEY | Error on tick/start/retry commands |
+| onchainos wallet not available | Error on tick/start/retry — please login first |
 | Bot already running | `start` rejects with existing PID warning |
 | No running bot | `stop` returns error |
 | Reset without --force | Returns error, requires confirmation |

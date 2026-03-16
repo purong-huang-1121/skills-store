@@ -1,16 +1,16 @@
-//! ScannerClient — OKX Trenches API + DEX swap execution for memepump scanner on Solana.
+//! ScannerClient — onchainos CLI wrapper for memepump scanner on Solana.
 //!
-//! Uses ApiClient for all HTTP calls. Wallet address comes from SOL_ADDRESS env var.
-//! No local Solana signing — OKX handles it server-side via /aggregator/swap with userWalletAddress.
+//! Uses `crate::onchainos` for all operations. Wallet address comes from
+//! `onchainos::get_sol_address()`.
+//! No local Solana signing — onchainos handles auth / TEE signing / broadcast.
 
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
 
 use super::engine::{safe_float, CHAIN_INDEX, SOL_DECIMALS, SOL_NATIVE};
-use crate::client::ApiClient;
+use crate::onchainos;
 
 pub struct ScannerClient {
-    api: ApiClient,
     pub wallet: String,
 }
 
@@ -19,57 +19,88 @@ pub struct SwapResult {
     pub amount_out: f64,
 }
 
+/// Map from JSON param key → onchainos CLI flag name.
+fn param_key_to_flag(key: &str) -> Option<&'static str> {
+    match key {
+        "chainIndex" => None, // handled by --chain
+        "stage" => None,      // handled by --stage
+        "minMarketCapUsd" => Some("--min-market-cap"),
+        "maxMarketCapUsd" => Some("--max-market-cap"),
+        "minHolders" => Some("--min-holders"),
+        "maxTop10HoldingsPercent" => Some("--max-top10-holdings-percent"),
+        "maxDevHoldingsPercent" => Some("--max-dev-holdings-percent"),
+        "maxInsidersPercent" => Some("--max-insiders-percent"),
+        "maxBundlersPercent" => Some("--max-bundlers-percent"),
+        "minTokenAge" => Some("--min-token-age"),
+        "maxTokenAge" => Some("--max-token-age"),
+        "minBuyTxCount" => Some("--min-buy-tx-count"),
+        "minVolume" => Some("--min-volume"),
+        "maxSnipersPercent" => Some("--max-snipers-percent"),
+        "maxFreshWalletPercent" => Some("--max-fresh-wallet-percent"),
+        "minTxCount" => Some("--min-tx-count"),
+        _ => None,
+    }
+}
+
 impl ScannerClient {
     /// Create a fully authenticated client.
-    /// Requires SOL_ADDRESS + OKX API keys (via ApiClient).
+    /// Wallet resolved from onchainos agent wallet.
     pub fn new() -> Result<Self> {
-        let api = ApiClient::new(None)?;
-        let wallet = std::env::var("SOL_ADDRESS")
-            .context("SOL_ADDRESS not set — required for memepump scanner")?;
-        Ok(Self { api, wallet })
+        let wallet = onchainos::get_sol_address()
+            .context("onchainos wallet not available — please login first")?;
+        Ok(Self { wallet })
     }
 
     /// Read-only client (no wallet needed for data queries).
     pub fn new_read_only() -> Result<Self> {
-        let api = ApiClient::new(None)?;
-        let wallet = std::env::var("SOL_ADDRESS").unwrap_or_default();
-        Ok(Self { api, wallet })
+        let wallet = onchainos::get_sol_address().unwrap_or_default();
+        Ok(Self { wallet })
     }
 
     // ── Trenches API ────────────────────────────────────────────────
 
     /// Fetch memepump token list with server-side filters.
-    /// `params` is a JSON object whose keys are used as GET query params.
+    /// `params` is a JSON object whose keys are translated to onchainos CLI flags.
     pub async fn get_memepump_list(&self, params: &Value) -> Result<Vec<Value>> {
-        // Build query pairs from JSON object
-        let query: Vec<(&str, String)> = params
-            .as_object()
-            .map(|m| {
-                m.iter()
-                    .filter_map(|(k, v)| {
-                        let s = v.as_str().map(|s| s.to_string()).or_else(|| {
-                            if v.is_number() {
-                                Some(v.to_string())
+        // Extract chain and stage from params (or use defaults)
+        let chain = params["chainIndex"]
+            .as_str()
+            .unwrap_or(CHAIN_INDEX);
+        let stage = params["stage"]
+            .as_str()
+            .unwrap_or("1");
+
+        // Build CLI filter pairs from the remaining JSON keys
+        let mut filter_strings: Vec<(String, String)> = Vec::new();
+
+        if let Some(map) = params.as_object() {
+            for (key, val) in map {
+                if let Some(flag) = param_key_to_flag(key) {
+                    let s = val
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| {
+                            if val.is_number() {
+                                Some(val.to_string())
                             } else {
                                 None
                             }
-                        })?;
-                        if s.is_empty() {
-                            None
-                        } else {
-                            Some((k.as_str(), s))
+                        });
+                    if let Some(s) = s {
+                        if !s.is_empty() {
+                            filter_strings.push((flag.to_string(), s));
                         }
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+                    }
+                }
+            }
+        }
 
-        let query_refs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let filters: Vec<(&str, &str)> = filter_strings
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
 
-        let data = self
-            .api
-            .get("/api/v6/dex/market/memepump/tokenList", &query_refs)
-            .await?;
+        let data = onchainos::memepump_tokens(chain, stage, &filters)?;
 
         match data {
             Value::Array(arr) => Ok(arr),
@@ -79,16 +110,7 @@ impl ScannerClient {
 
     /// Fetch dev info for a token (rug history, total launched, holdings).
     pub async fn get_dev_info(&self, token_addr: &str) -> Result<Value> {
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/market/memepump/tokenDevInfo",
-                &[
-                    ("tokenContractAddress", token_addr),
-                    ("chainIndex", CHAIN_INDEX),
-                ],
-            )
-            .await?;
+        let data = onchainos::memepump_dev_info(token_addr, CHAIN_INDEX)?;
 
         match data {
             Value::Array(arr) if !arr.is_empty() => Ok(arr[0].clone()),
@@ -99,16 +121,7 @@ impl ScannerClient {
 
     /// Fetch bundle info for a token (bundler ATH %, bundler count).
     pub async fn get_bundle_info(&self, token_addr: &str) -> Result<Value> {
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/market/memepump/tokenBundleInfo",
-                &[
-                    ("tokenContractAddress", token_addr),
-                    ("chainIndex", CHAIN_INDEX),
-                ],
-            )
-            .await?;
+        let data = onchainos::memepump_bundle_info(token_addr, CHAIN_INDEX)?;
 
         match data {
             Value::Array(arr) if !arr.is_empty() => Ok(arr[0].clone()),
@@ -119,31 +132,13 @@ impl ScannerClient {
 
     /// Fetch 1-minute candles for volume analysis.
     pub async fn get_candles(&self, token_addr: &str, limit: u32) -> Result<Value> {
-        self.api
-            .get(
-                "/api/v6/dex/market/candles",
-                &[
-                    ("tokenContractAddress", token_addr),
-                    ("chainIndex", CHAIN_INDEX),
-                    ("bar", "1m"),
-                    ("limit", &limit.to_string()),
-                ],
-            )
-            .await
+        let limit_str = limit.to_string();
+        onchainos::market_kline(token_addr, CHAIN_INDEX, "1m", &limit_str)
     }
 
     /// Fetch price info (MC, holders, price, top10, etc.).
     pub async fn get_price_info(&self, token_addr: &str) -> Result<Value> {
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/market/price-info",
-                &[
-                    ("tokenContractAddress", token_addr),
-                    ("chainIndex", CHAIN_INDEX),
-                ],
-            )
-            .await?;
+        let data = onchainos::token_price_info(token_addr, CHAIN_INDEX)?;
 
         match data {
             Value::Array(arr) if !arr.is_empty() => Ok(arr[0].clone()),
@@ -155,15 +150,10 @@ impl ScannerClient {
     /// Fetch SOL balance for the wallet.
     pub async fn fetch_sol_balance(&self) -> Result<f64> {
         if self.wallet.is_empty() {
-            bail!("SOL_ADDRESS not set");
+            bail!("onchainos wallet not available — please login first");
         }
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/balance/all-token-balances-by-address",
-                &[("address", &*self.wallet), ("chains", CHAIN_INDEX)],
-            )
-            .await?;
+
+        let data = onchainos::portfolio_all_balances(&self.wallet, CHAIN_INDEX)?;
 
         let assets = if let Some(arr) = data.as_array() {
             arr.first()
@@ -186,7 +176,7 @@ impl ScannerClient {
 
     // ── Swap execution ──────────────────────────────────────────────
 
-    /// Execute a swap via OKX DEX aggregator.
+    /// Execute a swap via onchainos CLI (sign + broadcast handled by onchainos).
     /// `from_token` and `to_token` are Solana token addresses.
     /// `amount_raw` is in minimal units (lamports for SOL, raw for SPL).
     pub async fn execute_swap(
@@ -197,36 +187,22 @@ impl ScannerClient {
         slippage_pct: &str,
     ) -> Result<SwapResult> {
         if self.wallet.is_empty() {
-            bail!("SOL_ADDRESS not set — cannot execute swap");
+            bail!("onchainos wallet not available — please login first");
         }
 
-        let data = self
-            .api
-            .get(
-                "/api/v6/dex/aggregator/swap",
-                &[
-                    ("chainIndex", CHAIN_INDEX),
-                    ("fromTokenAddress", from_token),
-                    ("toTokenAddress", to_token),
-                    ("amount", amount_raw),
-                    ("slippagePercent", slippage_pct),
-                    ("userWalletAddress", &self.wallet),
-                ],
-            )
-            .await?;
+        let (tx_hash, swap_data) = onchainos::execute_solana_swap(
+            from_token,
+            to_token,
+            amount_raw,
+            &self.wallet,
+            slippage_pct,
+        )
+        .await?;
 
-        let swap_data = match &data {
-            Value::Array(arr) if !arr.is_empty() => arr[0].clone(),
-            _ => data,
-        };
-
-        let tx_hash = swap_data["txHash"]
-            .as_str()
-            .or_else(|| swap_data["tx"]["txHash"].as_str())
-            .unwrap_or("")
-            .to_string();
-
-        let amount_out = safe_float(&swap_data["toTokenAmount"], 0.0);
+        let amount_out = safe_float(
+            &swap_data["routerResult"]["toTokenAmount"],
+            safe_float(&swap_data["toTokenAmount"], 0.0),
+        );
 
         Ok(SwapResult {
             tx_hash: if tx_hash.is_empty() {

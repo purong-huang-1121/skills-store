@@ -795,23 +795,24 @@ async fn detect_balance(protocol: Protocol, config: &'static AutoRebalanceConfig
 /// Estimate real gas cost in USD for a full rebalance (withdraw + approve + supply).
 /// Matches TS profit-calculator.ts: gasUnits × gasPrice × ETH price.
 async fn estimate_gas_cost_usd(config: &'static AutoRebalanceConfig) -> Result<f64> {
-    use alloy::providers::{Provider, ProviderBuilder};
-
-    // Estimated gas units for a full rebalance (withdraw + ERC20 approve + supply)
-    // Matches TS GAS_ESTIMATES: withdraw ~200k + approve ~50k + supply ~250k = ~500k
     const TOTAL_GAS_UNITS: u64 = 500_000;
 
-    let rpc = chains::rpc_url_for(config);
-    let provider = ProviderBuilder::new().connect_http(rpc.parse()?);
+    // Try onchainos gateway gas first, fall back to RPC
+    let gas_price: u128 = if let Ok(price) = crate::onchainos::get_gas_price(config.chain_name) {
+        price
+    } else {
+        use alloy::providers::{Provider, ProviderBuilder};
+        let rpc = chains::rpc_url_for(config);
+        let provider = ProviderBuilder::new().connect_http(rpc.parse()?);
+        provider
+            .get_gas_price()
+            .await
+            .context("failed to get gas price")? as u128
+    };
 
-    let gas_price = provider
-        .get_gas_price()
-        .await
-        .context("failed to get gas price")?;
-    let gas_cost_wei = gas_price as u128 * TOTAL_GAS_UNITS as u128;
+    let gas_cost_wei = gas_price * TOTAL_GAS_UNITS as u128;
     let gas_cost_eth = gas_cost_wei as f64 / 1e18;
 
-    // Fetch ETH/USD price from CoinGecko (matches TS gas.ts getEthPriceUSD)
     let eth_price = fetch_eth_price_usd().await.unwrap_or(3000.0);
 
     Ok(gas_cost_eth * eth_price)
@@ -902,21 +903,30 @@ async fn detect_wallet_usdc(config: &'static AutoRebalanceConfig) -> f64 {
 
 /// Get the wallet's raw USDC balance (U256, 6 decimals).
 async fn detect_wallet_usdc_raw(config: &'static AutoRebalanceConfig) -> U256 {
+    // Try onchainos balance query first
+    if crate::onchainos::is_available() {
+        if let Ok(balances) = crate::onchainos::get_token_balances(config.chain_name) {
+            if let Some(usdc) = balances.iter().find(|b| b.symbol.eq_ignore_ascii_case("USDC")) {
+                let raw = (usdc.balance * 1e6) as u64;
+                return U256::from(raw);
+            }
+            return U256::ZERO; // onchainos worked but no USDC found
+        }
+        // Fall through to RPC on failure
+    }
+
     use alloy::primitives::Address;
     use alloy::providers::ProviderBuilder;
-    use alloy::signers::local::PrivateKeySigner;
     use std::str::FromStr;
 
-    let pk = match std::env::var("EVM_PRIVATE_KEY") {
-        Ok(pk) => pk,
-        Err(_) => return U256::ZERO,
+    let user = if let Ok(addr_str) = crate::onchainos::get_evm_address() {
+        match Address::from_str(&addr_str) {
+            Ok(a) => a,
+            Err(_) => return U256::ZERO,
+        }
+    } else {
+        return U256::ZERO;
     };
-    let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-    let signer: PrivateKeySigner = match pk.parse() {
-        Ok(s) => s,
-        Err(_) => return U256::ZERO,
-    };
-    let user = signer.address();
 
     let rpc = chains::rpc_url_for(config);
     let provider = match rpc.parse() {

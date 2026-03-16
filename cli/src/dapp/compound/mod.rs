@@ -5,9 +5,16 @@ use alloy::primitives::{Address, U256};
 use alloy::providers::ProviderBuilder;
 use alloy::signers::local::PrivateKeySigner;
 use alloy::sol;
+use alloy::sol_types::SolCall;
 use anyhow::{Context, Result};
 use serde_json::json;
 use std::str::FromStr;
+
+/// Signing mode for write operations.
+pub enum SignerMode {
+    Local(PrivateKeySigner),
+    OnchainOs { chain_flag: String },
+}
 
 sol! {
     #[sol(rpc)]
@@ -33,7 +40,7 @@ pub struct CompoundClient {
     comet_address: Address,
     usdc_address: Address,
     rpc_url: String,
-    signer: Option<PrivateKeySigner>,
+    signer: Option<SignerMode>,
 }
 
 impl CompoundClient {
@@ -57,15 +64,30 @@ impl CompoundClient {
             comet_address: Address::from_str(comet_address).context("invalid comet address")?,
             usdc_address: Address::from_str(usdc_address).context("invalid USDC address")?,
             rpc_url: rpc_url.to_string(),
-            signer: Some(signer),
+            signer: Some(SignerMode::Local(signer)),
+        })
+    }
+
+    /// Client that signs via onchainos wallet CLI.
+    pub fn new_with_onchainos(comet_address: &str, usdc_address: &str, rpc_url: &str, chain_name: &str) -> Result<Self> {
+        let chain_flag = crate::onchainos::chain_flag(chain_name).to_string();
+        Ok(Self {
+            comet_address: Address::from_str(comet_address).context("invalid comet address")?,
+            usdc_address: Address::from_str(usdc_address).context("invalid USDC address")?,
+            rpc_url: rpc_url.to_string(),
+            signer: Some(SignerMode::OnchainOs { chain_flag }),
         })
     }
 
     fn address(&self) -> Result<Address> {
-        self.signer
-            .as_ref()
-            .map(|s| s.address())
-            .context("no signer configured")
+        match &self.signer {
+            Some(SignerMode::Local(s)) => Ok(s.address()),
+            Some(SignerMode::OnchainOs { .. }) => {
+                let addr_str = crate::onchainos::get_evm_address()?;
+                Address::from_str(&addr_str).context("invalid onchainos EVM address")
+            }
+            None => anyhow::bail!("no signer configured"),
+        }
     }
 
     /// Get current USDC supply APY as a percentage (e.g. 2.88 for 2.88%).
@@ -119,79 +141,152 @@ impl CompoundClient {
     /// Supply USDC to Compound. Handles ERC-20 approve if needed.
     pub async fn supply(&self, amount: U256) -> Result<serde_json::Value> {
         let signer = self.signer.as_ref().context("no signer for supply")?;
-        let wallet = EthereumWallet::from(signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
-        let user = signer.address();
+        let user = self.address()?;
 
-        // Check and set allowance
-        let erc20 = IERC20Compound::new(self.usdc_address, &provider);
-        let allowance = erc20
-            .allowance(user, self.comet_address)
-            .call()
-            .await
-            .context("failed to check allowance")?;
-        if allowance < amount {
-            let approve_receipt = erc20
-                .approve(self.comet_address, U256::MAX)
-                .send()
-                .await
-                .context("approve tx failed")?
-                .get_receipt()
-                .await
-                .context("failed to get approve receipt")?;
-            if !approve_receipt.status() {
-                anyhow::bail!("approve transaction reverted");
+        match signer {
+            SignerMode::Local(local_signer) => {
+                let wallet = EthereumWallet::from(local_signer.clone());
+                let provider = ProviderBuilder::new()
+                    .wallet(wallet)
+                    .connect_http(self.rpc_url.parse()?);
+
+                let erc20 = IERC20Compound::new(self.usdc_address, &provider);
+                let allowance = erc20
+                    .allowance(user, self.comet_address)
+                    .call()
+                    .await
+                    .context("failed to check allowance")?;
+                if allowance < amount {
+                    let approve_receipt = erc20
+                        .approve(self.comet_address, U256::MAX)
+                        .send()
+                        .await
+                        .context("approve tx failed")?
+                        .get_receipt()
+                        .await
+                        .context("failed to get approve receipt")?;
+                    if !approve_receipt.status() {
+                        anyhow::bail!("approve transaction reverted");
+                    }
+                }
+
+                let comet = IComet::new(self.comet_address, &provider);
+                let receipt = comet
+                    .supply(self.usdc_address, amount)
+                    .send()
+                    .await
+                    .context("supply tx failed")?
+                    .get_receipt()
+                    .await
+                    .context("failed to get supply receipt")?;
+
+                Ok(json!({
+                    "action": "supply",
+                    "protocol": "Compound V3",
+                    "status": if receipt.status() { "success" } else { "failed" },
+                    "tx_hash": format!("{}", receipt.transaction_hash),
+                    "block_number": receipt.block_number.unwrap_or_default(),
+                    "gas_used": receipt.gas_used.to_string(),
+                }))
+            }
+            SignerMode::OnchainOs { chain_flag } => {
+                let provider = ProviderBuilder::new().connect_http(self.rpc_url.parse()?);
+
+                let erc20 = IERC20Compound::new(self.usdc_address, &provider);
+                let allowance = erc20
+                    .allowance(user, self.comet_address)
+                    .call()
+                    .await
+                    .context("failed to check allowance")?;
+                if allowance < amount {
+                    let approve_calldata = IERC20Compound::approveCall {
+                        spender: self.comet_address,
+                        amount: U256::MAX,
+                    }
+                    .abi_encode();
+                    crate::onchainos::contract_call(
+                        chain_flag,
+                        &format!("{}", self.usdc_address),
+                        &format!("0x{}", hex::encode(&approve_calldata)),
+                        "0",
+                    )
+                    .await?;
+                }
+
+                let supply_calldata = IComet::supplyCall {
+                    asset: self.usdc_address,
+                    amount,
+                }
+                .abi_encode();
+                let tx_hash = crate::onchainos::contract_call(
+                    chain_flag,
+                    &format!("{}", self.comet_address),
+                    &format!("0x{}", hex::encode(&supply_calldata)),
+                    "0",
+                )
+                .await?;
+
+                Ok(json!({
+                    "action": "supply",
+                    "protocol": "Compound V3",
+                    "status": "success",
+                    "tx_hash": tx_hash,
+                }))
             }
         }
-
-        // Supply
-        let comet = IComet::new(self.comet_address, &provider);
-        let receipt = comet
-            .supply(self.usdc_address, amount)
-            .send()
-            .await
-            .context("supply tx failed")?
-            .get_receipt()
-            .await
-            .context("failed to get supply receipt")?;
-
-        Ok(json!({
-            "action": "supply",
-            "protocol": "Compound V3",
-            "status": if receipt.status() { "success" } else { "failed" },
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "block_number": receipt.block_number.unwrap_or_default(),
-            "gas_used": receipt.gas_used.to_string(),
-        }))
     }
 
     /// Withdraw USDC from Compound.
     pub async fn withdraw(&self, amount: U256) -> Result<serde_json::Value> {
         let signer = self.signer.as_ref().context("no signer for withdraw")?;
-        let wallet = EthereumWallet::from(signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
 
-        let comet = IComet::new(self.comet_address, &provider);
-        let receipt = comet
-            .withdraw(self.usdc_address, amount)
-            .send()
-            .await
-            .context("withdraw tx failed")?
-            .get_receipt()
-            .await
-            .context("failed to get withdraw receipt")?;
+        match signer {
+            SignerMode::Local(local_signer) => {
+                let wallet = EthereumWallet::from(local_signer.clone());
+                let provider = ProviderBuilder::new()
+                    .wallet(wallet)
+                    .connect_http(self.rpc_url.parse()?);
 
-        Ok(json!({
-            "action": "withdraw",
-            "protocol": "Compound V3",
-            "status": if receipt.status() { "success" } else { "failed" },
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "block_number": receipt.block_number.unwrap_or_default(),
-            "gas_used": receipt.gas_used.to_string(),
-        }))
+                let comet = IComet::new(self.comet_address, &provider);
+                let receipt = comet
+                    .withdraw(self.usdc_address, amount)
+                    .send()
+                    .await
+                    .context("withdraw tx failed")?
+                    .get_receipt()
+                    .await
+                    .context("failed to get withdraw receipt")?;
+
+                Ok(json!({
+                    "action": "withdraw",
+                    "protocol": "Compound V3",
+                    "status": if receipt.status() { "success" } else { "failed" },
+                    "tx_hash": format!("{}", receipt.transaction_hash),
+                    "block_number": receipt.block_number.unwrap_or_default(),
+                    "gas_used": receipt.gas_used.to_string(),
+                }))
+            }
+            SignerMode::OnchainOs { chain_flag } => {
+                let withdraw_calldata = IComet::withdrawCall {
+                    asset: self.usdc_address,
+                    amount,
+                }
+                .abi_encode();
+                let tx_hash = crate::onchainos::contract_call(
+                    chain_flag,
+                    &format!("{}", self.comet_address),
+                    &format!("0x{}", hex::encode(&withdraw_calldata)),
+                    "0",
+                )
+                .await?;
+
+                Ok(json!({
+                    "action": "withdraw",
+                    "protocol": "Compound V3",
+                    "status": "success",
+                    "tx_hash": tx_hash,
+                }))
+            }
+        }
     }
 }

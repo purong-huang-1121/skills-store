@@ -9,7 +9,7 @@ use serde_json::Value;
 
 pub const CHAIN: &str = "solana";
 pub const CHAIN_INDEX: &str = "501";
-pub const SOL_NATIVE: &str = "So11111111111111111111111111111111111111112";
+pub const SOL_NATIVE: &str = "11111111111111111111111111111111";
 pub const SOL_DECIMALS: u32 = 9;
 pub const GAS_RESERVE_SOL: f64 = 0.01;
 pub const MAX_POSITIONS: usize = 5;

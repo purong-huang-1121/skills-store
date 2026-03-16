@@ -104,19 +104,43 @@ fn addr(s: &str) -> Address {
 // Client
 // ---------------------------------------------------------------------------
 
+/// Signing mode for write operations.
+enum SignerMode {
+    Local(PrivateKeySigner),
+    OnchainOs { chain_flag: String },
+}
+
 pub struct UniswapClient {
     config: &'static UniswapChainConfig,
-    signer: PrivateKeySigner,
+    signer: SignerMode,
 }
 
 impl UniswapClient {
     pub fn new(chain: &str) -> Result<Self> {
         let config = get_chain_config(chain)?;
+        // Prefer onchainos wallet, fallback to EVM_PRIVATE_KEY
+        if crate::onchainos::is_available() {
+            let chain_flag = crate::onchainos::chain_flag(chain).to_string();
+            return Ok(Self {
+                config,
+                signer: SignerMode::OnchainOs { chain_flag },
+            });
+        }
         let pk = std::env::var("EVM_PRIVATE_KEY")
-            .context("EVM_PRIVATE_KEY env var required for Uniswap swaps")?;
+            .context("EVM_PRIVATE_KEY env var required for Uniswap swaps (or login via onchainos wallet)")?;
         let pk = pk.strip_prefix("0x").unwrap_or(&pk);
         let signer: PrivateKeySigner = pk.parse().context("invalid EVM_PRIVATE_KEY")?;
-        Ok(Self { config, signer })
+        Ok(Self { config, signer: SignerMode::Local(signer) })
+    }
+
+    fn address(&self) -> Result<Address> {
+        match &self.signer {
+            SignerMode::Local(s) => Ok(s.address()),
+            SignerMode::OnchainOs { .. } => {
+                let addr_str = crate::onchainos::get_evm_address()?;
+                Address::from_str(&addr_str).context("invalid onchainos EVM address")
+            }
+        }
     }
 
     /// Get a swap quote (estimated output amount) without executing.
@@ -162,16 +186,12 @@ impl UniswapClient {
         decimals_in: u8,
         decimals_out: u8,
     ) -> Result<serde_json::Value> {
-        let wallet = EthereumWallet::from(self.signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.config.rpc_url.parse()?);
-
         let router_addr = Address::from_str(self.config.swap_router)?;
-        let user = self.signer.address();
+        let user = self.address()?;
 
-        // 1. Get quote for minimum output calculation
-        let quoter = IQuoterV2::new(Address::from_str(self.config.quoter_v2)?, &provider);
+        // 1. Get quote (read-only, same for both signer modes)
+        let provider_ro = ProviderBuilder::new().connect_http(self.config.rpc_url.parse()?);
+        let quoter = IQuoterV2::new(Address::from_str(self.config.quoter_v2)?, &provider_ro);
         let quote_params = IQuoterV2::QuoteExactInputSingleParams {
             tokenIn: token_in,
             tokenOut: token_out,
@@ -185,27 +205,10 @@ impl UniswapClient {
             .await
             .context("quote failed — pool may not exist for this pair/fee tier")?;
 
-        // Apply slippage tolerance
         let min_out = quote.amountOut * U256::from(10000 - slippage_bps) / U256::from(10000);
 
-        // 2. Approve router to spend tokenIn
-        let erc20 = IERC20::new(token_in, &provider);
-        let current_allowance = erc20.allowance(user, router_addr).call().await?;
-        if current_allowance < amount_in {
-            let approve_receipt = erc20
-                .approve(router_addr, amount_in)
-                .send()
-                .await?
-                .get_receipt()
-                .await?;
-            if !approve_receipt.status() {
-                bail!("ERC20 approve transaction failed");
-            }
-        }
-
-        // 3. Execute swap via multicall with deadline
-        let router = ISwapRouter02::new(router_addr, &provider);
-        let deadline = U256::from(chrono::Utc::now().timestamp() as u64 + 300); // 5 min
+        // Build swap calldata (shared between both modes)
+        let deadline = U256::from(chrono::Utc::now().timestamp() as u64 + 300);
         let swap_params = ISwapRouter02::ExactInputSingleParams {
             tokenIn: token_in,
             tokenOut: token_out,
@@ -215,21 +218,83 @@ impl UniswapClient {
             amountOutMinimum: min_out,
             sqrtPriceLimitX96: U160::ZERO,
         };
-
-        // Encode the exactInputSingle call, then wrap in multicall with deadline
-        let swap_calldata = ISwapRouter02::exactInputSingleCall {
+        let inner_calldata = ISwapRouter02::exactInputSingleCall {
             params: swap_params,
         }
         .abi_encode();
 
-        let receipt = router
-            .multicall(deadline, vec![swap_calldata.into()])
-            .send()
-            .await
-            .context("swap transaction failed")?
-            .get_receipt()
-            .await
-            .context("failed to get swap receipt")?;
+        let tx_hash = match &self.signer {
+            SignerMode::Local(local_signer) => {
+                let wallet = EthereumWallet::from(local_signer.clone());
+                let provider = ProviderBuilder::new()
+                    .wallet(wallet)
+                    .connect_http(self.config.rpc_url.parse()?);
+
+                // Approve
+                let erc20 = IERC20::new(token_in, &provider);
+                let current_allowance = erc20.allowance(user, router_addr).call().await?;
+                if current_allowance < amount_in {
+                    let approve_receipt = erc20
+                        .approve(router_addr, amount_in)
+                        .send()
+                        .await?
+                        .get_receipt()
+                        .await?;
+                    if !approve_receipt.status() {
+                        bail!("ERC20 approve transaction failed");
+                    }
+                }
+
+                // Swap
+                let router = ISwapRouter02::new(router_addr, &provider);
+                let receipt = router
+                    .multicall(deadline, vec![inner_calldata.into()])
+                    .send()
+                    .await
+                    .context("swap transaction failed")?
+                    .get_receipt()
+                    .await
+                    .context("failed to get swap receipt")?;
+
+                if !receipt.status() {
+                    bail!("swap transaction reverted");
+                }
+                format!("{}", receipt.transaction_hash)
+            }
+            SignerMode::OnchainOs { chain_flag } => {
+                // Approve via onchainos
+                let erc20 = IERC20::new(token_in, &provider_ro);
+                let current_allowance = erc20.allowance(user, router_addr).call().await?;
+                if current_allowance < amount_in {
+                    let approve_calldata = IERC20::approveCall {
+                        spender: router_addr,
+                        amount: amount_in,
+                    }
+                    .abi_encode();
+                    crate::onchainos::contract_call(
+                        chain_flag,
+                        &format!("{}", token_in),
+                        &format!("0x{}", hex::encode(&approve_calldata)),
+                        "0",
+                    )
+                    .await?;
+                }
+
+                // Swap via onchainos: multicall(deadline, [exactInputSingle calldata])
+                let multicall_calldata = ISwapRouter02::multicallCall {
+                    deadline,
+                    data: vec![inner_calldata.into()],
+                }
+                .abi_encode();
+                crate::onchainos::contract_call(
+                    chain_flag,
+                    &format!("{}", router_addr),
+                    &format!("0x{}", hex::encode(&multicall_calldata)),
+                    "0",
+                )
+                .await?
+            }
+        };
 
         Ok(json!({
             "action": "swap",
@@ -241,9 +306,8 @@ impl UniswapClient {
             "minimum_out": format_units(min_out, decimals_out),
             "slippage_bps": slippage_bps,
             "fee_tier": fee,
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "status": if receipt.status() { "success" } else { "failed" },
-            "block_number": receipt.block_number.unwrap_or_default(),
+            "tx_hash": tx_hash,
+            "status": "success",
         }))
     }
 }

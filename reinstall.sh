@@ -46,7 +46,7 @@ echo ""
 echo "=== Step 3: 检查 curl ==="
 
 if command -v curl >/dev/null 2>&1; then
-  echo "✅ curl 已安装：$(cur  l --version | head -1)"
+  echo "✅ curl 已安装：$(curl --version | head -1)"
 else
   echo "❌ curl 未安装，尝试安装..."
   if command -v apt-get >/dev/null 2>&1; then
@@ -126,28 +126,46 @@ fi
 echo "✅ skills-store $(skills-store --version 2>/dev/null | awk '{print $2}') 安装完成"
 
 echo ""
-echo "=== Step 7: 配置 .env 环境变量 ==="
+echo "=== Step 7: 检查 onchainos CLI ==="
+
+ONCHAINOS_MIN_VERSION="1.0.5"
+
+if command -v onchainos >/dev/null 2>&1; then
+  ONCHAINOS_VERSION=$(onchainos --version 2>/dev/null | awk '{print $2}')
+
+  # Compare versions: check if installed >= minimum
+  printf '%s\n%s' "$ONCHAINOS_MIN_VERSION" "$ONCHAINOS_VERSION" | sort -V -C
+  if [ $? -eq 0 ]; then
+    echo "✅ onchainos $ONCHAINOS_VERSION 已安装 (>= $ONCHAINOS_MIN_VERSION)"
+  else
+    echo "⚠️  onchainos 版本过低 ($ONCHAINOS_VERSION < $ONCHAINOS_MIN_VERSION)"
+    echo "请按照文档升级: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1"
+    exit 1
+  fi
+else
+  echo "❌ onchainos CLI 未安装"
+  echo ""
+  echo "skills-store 需要 onchainos CLI (>= $ONCHAINOS_MIN_VERSION) 来进行链上签名和交易。"
+  echo "请按照以下文档安装:"
+  echo ""
+  echo "  https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "=== Step 8: 配置 Telegram 通知（可选） ==="
 
 ENV_FILE="$HOME/.cargo/bin/.env"
 mkdir -p "$HOME/.cargo/bin"
 
 if [ ! -f "$ENV_FILE" ]; then
   cat > "$ENV_FILE" <<'EOF'
-# skills-store 环境变量配置
-# 填写需要的变量后保存关闭即可，不需要的留空
+# skills-store 通知配置
+# 配置 Telegram 机器人后，策略运行时会实时推送交易通知
+# 不需要可留空
 
-# EVM 钱包私钥（Aave / Morpho / Grid Trading / Auto-Rebalance 必填）
-EVM_PRIVATE_KEY=
-
-# OKX API（Grid Trading / Ranking Sniper / Signal Tracker / Memepump 必填）
-OKX_API_KEY=
-OKX_SECRET_KEY=
-OKX_PASSPHRASE=
-
-# Solana 钱包私钥（Ranking Sniper / Signal Tracker / Memepump 必填）
-SOLANA_PRIVATE_KEY=
-
-# Telegram 通知（可选，所有策略支持）
+# Telegram 通知（所有策略支持）
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 EOF
@@ -156,6 +174,7 @@ else
   echo "（$ENV_FILE 已存在，直接打开编辑）"
 fi
 
+echo "配置 Telegram 机器人后，策略运行时会及时推送交易通知。"
 echo "正在打开编辑器，填写完成后保存关闭，脚本自动继续..."
 if command -v code >/dev/null 2>&1; then
   code --wait "$ENV_FILE"

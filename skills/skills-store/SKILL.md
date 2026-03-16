@@ -68,7 +68,6 @@ metadata:
 >   ```bash
 >   skills-store --version
 >   ```
->   如果命令不存在（exit 127）→ 运行 `export PATH="$HOME/.cargo/bin:$PATH"` 再重试。
 > 
 > **不得跳过此步骤。不得在安装完成前回复用户任何内容。**
 
@@ -131,102 +130,26 @@ npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade strate
 npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade --yes
 ```
 
-### 安装后：提示配置环境变量（重要）
+### 安装后：配置 Telegram 通知（推荐）
 
-安装命令执行完毕后，**必须**告知用户需要创建 `.env` 文件并配置对应的环境变量，否则策略无法运行。根据用户安装的策略展示对应的 example：
+安装命令执行完毕后，检查 Telegram 通知是否已配置：
 
----
-
-**USDC 智能调仓（strategy-auto-rebalance）**
 ```bash
-# ~/.cargo/bin/.env（推荐，所有策略共用）
-EVM_PRIVATE_KEY=0x你的私钥
-
-# 可选：Telegram 通知
-TELEGRAM_BOT_TOKEN=你的BotToken
-TELEGRAM_CHAT_ID=你的ChatID
+cat ~/.cargo/bin/.env 2>/dev/null
 ```
 
----
+如果 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID` 为空或文件不存在，提示用户：
 
-**ETH/USDC 网格交易（strategy-grid-trade）**
-```bash
-# ~/.cargo/bin/.env（推荐，所有策略共用）
-# OKX API（用于报价和交易执行）
-OKX_API_KEY=你的APIKey
-OKX_SECRET_KEY=你的SecretKey
-OKX_PASSPHRASE=你的Passphrase
+> "Telegram 通知未配置。配置后策略运行时会及时推送交易通知（买入/卖出/止损/异常等）。"
+>
+> "配置文件路径：`~/.cargo/bin/.env`，需要填写："
+> ```
+> TELEGRAM_BOT_TOKEN=你的BotToken
+> TELEGRAM_CHAT_ID=你的ChatID
+> ```
+> "是否现在配置？我可以帮你打开文件编辑。"
 
-# EVM 钱包（Base 链）
-EVM_PRIVATE_KEY=0x你的私钥
-
-# 可选
-BASE_RPC_URL=你的自定义RPC（默认使用公共节点）
-TELEGRAM_BOT_TOKEN=你的BotToken
-TELEGRAM_CHAT_ID=你的ChatID
-```
-
----
-
-**SOL 涨幅榜狙击（strategy-ranking-sniper）**
-```bash
-# ~/.cargo/bin/.env（推荐，所有策略共用）
-# Solana 钱包
-SOLANA_PRIVATE_KEY=你的Base58私钥
-
-# OKX API
-OKX_API_KEY=你的APIKey
-OKX_SECRET_KEY=你的SecretKey
-OKX_PASSPHRASE=你的Passphrase
-
-# 可选
-TELEGRAM_BOT_TOKEN=你的BotToken
-TELEGRAM_CHAT_ID=你的ChatID
-```
-
----
-
-**SOL 聪明钱跟单（strategy-signal-tracker）**
-```bash
-# ~/.cargo/bin/.env（推荐，所有策略共用）
-# Solana 钱包
-SOLANA_PRIVATE_KEY=你的Base58私钥
-
-# OKX API
-OKX_API_KEY=你的APIKey
-OKX_SECRET_KEY=你的SecretKey
-OKX_PASSPHRASE=你的Passphrase
-
-# 可选
-TELEGRAM_BOT_TOKEN=你的BotToken
-TELEGRAM_CHAT_ID=你的ChatID
-```
-
----
-
-**SOL Memepump 扫描（strategy-memepump-scanner）**
-```bash
-# ~/.cargo/bin/.env（推荐，所有策略共用）
-# Solana 钱包
-SOLANA_PRIVATE_KEY=你的Base58私钥
-
-# OKX API
-OKX_API_KEY=你的APIKey
-OKX_SECRET_KEY=你的SecretKey
-OKX_PASSPHRASE=你的Passphrase
-
-# 可选
-TELEGRAM_BOT_TOKEN=你的BotToken
-TELEGRAM_CHAT_ID=你的ChatID
-```
-
----
-
-展示完对应的 `.env` 示例后，提示用户：
-```
-配置完成后，在 .env 所在目录运行策略命令即可。
-如需帮助，直接告诉我你遇到的问题。
-```
+如果用户同意，帮助编辑 `~/.cargo/bin/.env` 文件。如果用户跳过，继续下一步。
 
 **重要：安装后直接读取 Skill 文件继续引导**
 
@@ -235,9 +158,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 ```bash
 ```bash
 skill_path=$(find ~ -path "*/.agents/skills/<skill-name>/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
 ```
-然后 Read file 读取上面命令输出的路径。
 ```
 
 读取后按文件中的指令执行（Pre-flight → Post-Install Welcome → 引导配置）。
@@ -296,7 +217,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │    strategy-grid set --key tick_interval_secs --value N 调整）      │
 │  ● 特点：自适应波动率、风控熔断、仓位限制、失败重试                  │
 ├─────────────────────────────────────────────────────────────────────┤
-│  D. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
+│  C. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
 │     分类：MEME交易  |  作者：Suning Yao (suning.yao@okg.com)        │
 │                                                                     │
 │  实时监控 Solana 涨幅榜 Top 20，新币上榜自动买入、跌出自动卖出。     │
@@ -311,7 +232,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 依赖：skills-store (token-ranking, token-advanced-info, holder,      │
 │          current-price, quote, swap)                                 │
 ├─────────────────────────────────────────────────────────────────────┤
-│  E. SOL 聪明钱跟单 (Signal Tracker)                                  │
+│  D. SOL 聪明钱跟单 (Signal Tracker)                                  │
 │     分类：MEME交易  |  作者：Ray Zhou & Cai Shuai                   │
 │                                                                     │
 │  实时监控链上聪明钱动向，多个高质量钱包同时买入同一代币时自动跟单。   │
@@ -327,7 +248,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 依赖：skills-store (signal-list, price-info, token-search, candles,  │
 │          tokenDevInfo, tokenBundleInfo, balances, quote, swap)       │
 ├─────────────────────────────────────────────────────────────────────┤
-│  F. SOL Memepump 扫描 (Memepump Scanner)                             │
+│  E. SOL Memepump 扫描 (Memepump Scanner)                             │
 │     分类：MEME交易  |  作者：Victor Lee (victor.lee@okg.com)        │
 │                                                                     │
 │  实时扫描 Pump.fun 迁移代币，TX加速 + 成交量突增 + 买压主导          │
@@ -343,20 +264,31 @@ Present the two automated strategies and the supported dApp ecosystem:
 │          tokenBundleInfo, candles, trades, price-info, quote, swap)  │
 └─────────────────────────────────────────────────────────────────────┘
 
-请选择：输入 A ~ F
+请选择：输入 A ~ E
 
 另外也支持直接操作 dApp：Aave · Morpho · Uniswap · Hyperliquid · Ethena · Polymarket · Kalshi，直接说想用哪个就行。
 ```
 
 ### Step 2: User Selects Strategy or Platform
 
+**⚠️ 用户选择任何策略或 dApp 后，必须先检查 onchainos CLI：**
+
+```bash
+onchainos --version
+```
+
+- **未安装或版本 < 1.0.5** → 告知用户需要安装 onchainos CLI：
+  > "需要先安装 onchainos CLI（链上签名工具），请按照文档操作：https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
+  > 安装完成后运行 `onchainos wallet login` 登录，然后继续。"
+- **已安装且版本 >= 1.0.5** → 继续下方路由
+
 | User says | Action |
 |-----------|--------|
 | "A", "调仓", "auto-rebalance", "USDC 收益" | → Go to **Flow A** |
 | "B", "网格", "grid", "grid trading" | → Go to **Flow B** |
-| "D", "涨幅榜", "ranking", "榜单狙击" | → Go to **Flow D** |
-| "E", "聪明钱", "signal", "跟单", "smart money" | → Go to **Flow E** |
-| "F", "memepump", "pump.fun", "meme 扫描" | → Go to **Flow F** |
+| "C", "涨幅榜", "ranking", "榜单狙击" | → Go to **Flow C** |
+| "D", "聪明钱", "signal", "跟单", "smart money" | → Go to **Flow D** |
+| "E", "memepump", "pump.fun", "meme 扫描" | → Go to **Flow E** |
 | "都要", "both", "两个都跑" | → Explain that multiple strategies can run concurrently, guide one by one |
 | "Aave", "存款", "借贷" | → Route to `skills-store aave` commands |
 | "Uniswap", "换币", "swap" | → Route to `skills-store uniswap` commands |
@@ -375,26 +307,15 @@ Present the two automated strategies and the supported dApp ecosystem:
 npx skills add purong-huang-1121/skills-store --skill strategy-auto-rebalance --yes
 ```
 
-### Step 2：安装策略二进制
-
-```bash
-curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance
-export PATH="$HOME/.cargo/bin:$PATH"
-```
-
-### Step 3：读取策略 Skill 并继续引导
+### Step 2：读取策略 Skill 并继续引导
 
 安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
 
 ```bash
-```bash
-skill_path=$(find ~ -path "*/.agents/skills/strategy-auto-rebalance/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
-```
-然后 Read file 读取上面命令输出的路径。
+Read file: ~/.agents/skills/strategy-auto-rebalance/SKILL.md
 ```
 
-读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
+读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行。
 
 
 ## Flow B: ETH/USDC 网格交易
@@ -405,29 +326,15 @@ echo "$skill_path"
 npx skills add purong-huang-1121/skills-store --skill strategy-grid-trade --yes
 ```
 
-### Step 2：安装策略二进制
+### Step 2：读取策略 Skill 并继续引导
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-grid
-export PATH="$HOME/.cargo/bin:$PATH"
+Read file: ~/.agents/skills/strategy-grid-trade/SKILL.md
 ```
 
-### Step 3：读取策略 Skill 并继续引导
-
-安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
-
-```bash
-```bash
-skill_path=$(find ~ -path "*/.agents/skills/strategy-grid-trade/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
-```
-然后 Read file 读取上面命令输出的路径。
-```
-
-读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成链选择、环境变量配置和启动。
 
 
-## Flow D: SOL 涨幅榜狙击 (Ranking Sniper)
+## Flow C: SOL 涨幅榜狙击 (Ranking Sniper)
 
 ### Step 1：安装策略 Skill
 
@@ -435,29 +342,15 @@ echo "$skill_path"
 npx skills add purong-huang-1121/skills-store --skill strategy-ranking-sniper --yes
 ```
 
-### Step 2：安装策略二进制
+### Step 2：读取策略 Skill 并继续引导
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-ranking-sniper
-export PATH="$HOME/.cargo/bin:$PATH"
+Read file: ~/.agents/skills/strategy-ranking-sniper/SKILL.md
 ```
 
-### Step 3：读取策略 Skill 并继续引导
-
-安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
-
-```bash
-```bash
-skill_path=$(find ~ -path "*/.agents/skills/strategy-ranking-sniper/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
-```
-然后 Read file 读取上面命令输出的路径。
-```
-
-读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
 
 
-## Flow E: SOL 聪明钱跟单 (Signal Tracker)
+## Flow D: SOL 聪明钱跟单 (Signal Tracker)
 
 ### Step 1：安装策略 Skill
 
@@ -465,29 +358,15 @@ echo "$skill_path"
 npx skills add purong-huang-1121/skills-store --skill strategy-signal-tracker --yes
 ```
 
-### Step 2：安装策略二进制
+### Step 2：读取策略 Skill 并继续引导
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
-export PATH="$HOME/.cargo/bin:$PATH"
+Read file: ~/.agents/skills/strategy-signal-tracker/SKILL.md
 ```
 
-### Step 3：读取策略 Skill 并继续引导
-
-安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
-
-```bash
-```bash
-skill_path=$(find ~ -path "*/.agents/skills/strategy-signal-tracker/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
-```
-然后 Read file 读取上面命令输出的路径。
-```
-
-读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
 
 
-## Flow F: SOL Memepump 扫描 (Memepump Scanner)
+## Flow E: SOL Memepump 扫描 (Memepump Scanner)
 
 ### Step 1：安装策略 Skill
 
@@ -495,24 +374,10 @@ echo "$skill_path"
 npx skills add purong-huang-1121/skills-store --skill strategy-memepump-scanner --yes
 ```
 
-### Step 2：安装策略二进制
+### Step 2：读取策略 Skill 并继续引导
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install_strategy.sh | sh -s -- strategy-memepump-scanner
-export PATH="$HOME/.cargo/bin:$PATH"
+Read file: ~/.agents/skills/strategy-memepump-scanner/SKILL.md
 ```
 
-### Step 3：读取策略 Skill 并继续引导
-
-安装完成后，**立即读取策略 Skill 文件内容并按其指令继续引导用户**（无需重开会话）：
-
-```bash
-```bash
-skill_path=$(find ~ -path "*/.agents/skills/strategy-memepump-scanner/SKILL.md" 2>/dev/null | head -1)
-echo "$skill_path"
-```
-然后 Read file 读取上面命令输出的路径。
-```
-
-读取成功后，按该文件中的 **Pre-flight Checks** → **Post-Install Welcome** 顺序继续执行，引导用户完成环境变量配置和启动。
 

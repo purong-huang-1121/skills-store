@@ -119,21 +119,25 @@ which strategy-signal-tracker
                     └─────────────────────┘
 ```
 
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 1.0.5
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
+
+2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
+
 ## Authentication
 
-Requires two sets of credentials in `.env`:
-
-**OKX API (for Signal data + swap execution):**
-```bash
-OKX_API_KEY=...
-OKX_SECRET_KEY=...
-OKX_PASSPHRASE=...
-```
-
-**Solana Wallet (for on-chain signing):**
-```bash
-SOLANA_PRIVATE_KEY=...   # Solana wallet with SOL
-```
+- **OKX API**: Handled by onchainos CLI internally
+- **Solana Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
 
 ## Post-Install Welcome
 
@@ -160,17 +164,22 @@ SOLANA_PRIVATE_KEY=...   # Solana wallet with SOL
 支持链：Solana
 预估收益：高波动，视市场而定
 
-需要先配置 .env 环境变量才能运行。
+需要 onchainos 钱包登录后才能运行。
 ```
 
-然后检查 `.env` 是否已配置：
+### Pre-start Checks
 
-```bash
-grep -q "OKX_API_KEY" ~/.cargo/bin/.env 2>/dev/null && grep -q "SOL_PRIVATE_KEY" ~/.cargo/bin/.env 2>/dev/null && echo "configured" || echo "missing"
-```
+Before starting the daemon, check:
 
-- 输出 `configured` → 检查余额（见下方）
-- 输出 `missing` → 引导用户配置（见下方环境变量说明）
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
+   ```bash
+   cat ~/.cargo/bin/.env
+   ```
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
 
 配置已就绪时，检查钱包余额：
 
@@ -533,8 +542,7 @@ The signal tracker checks a shared lock file before opening a position to preven
 
 ## Security Notes
 
-- Private key loaded from `.env` only, never logged or exposed in API responses
-- API credentials transmitted via HTTP headers only (never in URL)
+- Wallet signing via onchainos wallet (TEE signing) — private keys never leave the secure enclave
+- API credentials handled by onchainos CLI internally
 - Fail-closed: any safety check API failure = skip token (assume unsafe)
 - State files use direct write (no atomic rename) — crash may corrupt JSON
-- Create `.gitignore` in bot directory: `.env`, `*.json`, `__pycache__/`

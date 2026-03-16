@@ -14,7 +14,11 @@ use crate::strategy::memepump_scanner::state::ScannerState;
 #[derive(Subcommand)]
 pub enum ScannerCommand {
     /// Execute one scan cycle: scan -> filter -> signal -> trade -> monitor exits
-    Tick,
+    Tick {
+        /// Quick test: buy ~$0.01 worth of this token, then sell back immediately.
+        #[arg(long)]
+        token: Option<String>,
+    },
     /// Start foreground daemon (tick every 10s)
     Start,
     /// Stop running daemon via PID file
@@ -48,11 +52,22 @@ pub enum ScannerCommand {
         /// New value
         value: String,
     },
+    /// Test buy a specific token (dev/debug only)
+    TestBuy {
+        /// Token contract address
+        token: String,
+        /// SOL amount to buy
+        #[arg(long, default_value = "0.005")]
+        amount: f64,
+    },
 }
 
 pub async fn execute(cmd: ScannerCommand) -> Result<()> {
     match cmd {
-        ScannerCommand::Tick => {
+        ScannerCommand::Tick { token } => {
+            if let Some(token_addr) = token {
+                return cmd_quick_test(&token_addr).await;
+            }
             let notifier = Notifier::from_env("\u{1f50d} Scanner");
             cmd_tick(&notifier).await
         }
@@ -66,6 +81,7 @@ pub async fn execute(cmd: ScannerCommand) -> Result<()> {
         ScannerCommand::Balance => cmd_balance().await,
         ScannerCommand::Config => cmd_config().await,
         ScannerCommand::Set { key, value } => cmd_set(&key, &value).await,
+        ScannerCommand::TestBuy { token, amount } => cmd_test_buy(&token, amount).await,
     }
 }
 
@@ -1161,7 +1177,7 @@ async fn cmd_analyze() -> Result<()> {
 
 async fn cmd_balance() -> Result<()> {
     let client = ScannerClient::new_read_only()?;
-    let wallet = std::env::var("SOL_ADDRESS").unwrap_or_default();
+    let wallet = crate::onchainos::get_sol_address().unwrap_or_default();
     let sol = client.fetch_sol_balance().await?;
     let hint = if sol < 0.1 {
         format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
@@ -1295,6 +1311,137 @@ async fn cmd_set(key: &str, value: &str) -> Result<()> {
     output::success(json!({
         "updated": key,
         "value": value,
+    }));
+    Ok(())
+}
+
+// ── test-buy ────────────────────────────────────────────────────────
+
+/// Quick swap test: buy ~$0.01 worth of a token, then sell back.
+/// Skips all scanner filters — purely tests the onchainos swap pipeline.
+async fn cmd_quick_test(token_addr: &str) -> Result<()> {
+    let client = ScannerClient::new()?;
+
+    // Get SOL price to calculate ~$0.01 worth
+    let sol_price = match crate::onchainos::swap_quote(
+        "11111111111111111111111111111111",
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+        "1000000000", // 1 SOL
+        "solana",
+        None,
+    ) {
+        Ok(data) => {
+            let item = if data.is_array() { data[0].clone() } else { data };
+            item["toTokenAmount"]
+                .as_str()
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(100_000_000.0) // fallback ~$100
+                / 1_000_000.0 // USDC 6 decimals
+        }
+        Err(_) => 100.0, // fallback
+    };
+
+    // $0.01 worth of SOL in lamports
+    let sol_amount = 0.01 / sol_price;
+    let lamports = (sol_amount * 1e9) as u64;
+    // Minimum 100_000 lamports (0.0001 SOL) to avoid dust
+    let lamports = lamports.max(100_000);
+
+    eprintln!(
+        "[quick-test] SOL price: ${:.2} | Buying ${:.4} worth ({} lamports)",
+        sol_price,
+        lamports as f64 / 1e9 * sol_price,
+        lamports
+    );
+
+    // Buy
+    let lamports_str = format!("{}", lamports);
+    let buy_result = client
+        .execute_swap(engine::SOL_NATIVE, token_addr, &lamports_str, "3")
+        .await?;
+    let buy_tx = buy_result.tx_hash.clone().unwrap_or_default();
+    eprintln!("[quick-test] BUY tx: {}", buy_tx);
+
+    // Wait for settlement
+    eprintln!("[quick-test] Waiting 8s...");
+    tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+
+    // Query actual token balance
+    let sell_amount = match crate::onchainos::portfolio_all_balances(&client.wallet, "501") {
+        Ok(data) => {
+            let assets = data
+                .as_array()
+                .and_then(|arr| arr.first())
+                .and_then(|item| item["tokenAssets"].as_array())
+                .cloned()
+                .unwrap_or_default();
+            assets
+                .iter()
+                .find(|a| {
+                    a["tokenContractAddress"]
+                        .as_str()
+                        .unwrap_or("")
+                        .eq_ignore_ascii_case(token_addr)
+                })
+                .and_then(|a| a["rawBalance"].as_str().map(|s| s.to_string()))
+                .unwrap_or_default()
+        }
+        Err(_) => String::new(),
+    };
+
+    if sell_amount.is_empty() || sell_amount == "0" {
+        eprintln!("[quick-test] No token balance found, skipping sell");
+        output::success(json!({
+            "action": "quick_test",
+            "token": token_addr,
+            "buy_tx": buy_tx,
+            "sell_tx": null,
+            "note": "buy succeeded but no balance found for sell"
+        }));
+        return Ok(());
+    }
+
+    eprintln!("[quick-test] Selling back (amount_raw: {sell_amount})...");
+    let sell_result = client
+        .execute_swap(token_addr, engine::SOL_NATIVE, &sell_amount, "3")
+        .await?;
+    let sell_tx = sell_result.tx_hash.clone().unwrap_or_default();
+
+    output::success(json!({
+        "action": "quick_test",
+        "token": token_addr,
+        "buy_tx": buy_tx,
+        "sell_tx": sell_tx,
+        "buy_lamports": lamports,
+        "sell_amount_raw": sell_amount,
+    }));
+    Ok(())
+}
+
+async fn cmd_test_buy(token: &str, amount: f64) -> Result<()> {
+    let client = ScannerClient::new()?;
+    let sol_bal = client.fetch_sol_balance().await?;
+    if sol_bal < amount {
+        bail!(
+            "Insufficient SOL: have {:.4}, need {:.4}",
+            sol_bal,
+            amount
+        );
+    }
+
+    let amount_raw = format!("{}", (amount * 1e9) as u64);
+    eprintln!("[test-buy] Buying {} SOL worth of {}...", amount, token);
+
+    let result = client
+        .execute_swap(engine::SOL_NATIVE, token, &amount_raw, "5")
+        .await?;
+
+    output::success(json!({
+        "action": "test_buy",
+        "token": token,
+        "sol_amount": amount,
+        "tx_hash": result.tx_hash,
+        "amount_out": result.amount_out,
     }));
     Ok(())
 }

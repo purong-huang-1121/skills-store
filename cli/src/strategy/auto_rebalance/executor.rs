@@ -50,25 +50,36 @@ pub async fn execute_rebalance_on(
     let config = chain_config;
     let rpc = chains::rpc_url_for(config);
     let aave_chain = config.aave_chain_key;
+    let use_onchainos = crate::onchainos::is_available();
     let mut transactions = Vec::new();
     let mut total_gas: u64 = 0;
 
     // Step 1: Withdraw from source
     let withdraw_result = match from {
         Protocol::Aave => {
-            let client = AaveClient::new_with_signer(aave_chain)?;
+            let client = if use_onchainos {
+                AaveClient::new_with_onchainos(aave_chain)?
+            } else {
+                AaveClient::new_with_signer(aave_chain)?
+            };
             let (asset_addr, decimals) = client.resolve_asset("USDC").await?;
             client.withdraw(asset_addr, amount, decimals).await?
         }
         Protocol::Compound => {
-            let client = CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                CompoundClient::new_with_onchainos(config.compound_comet, config.usdc, &rpc, config.chain_name)?
+            } else {
+                CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?
+            };
             client.withdraw(amount).await?
         }
         Protocol::Morpho => {
-            // For withdrawal, we need to find which vault has the balance.
-            // Try the override first (it came from yield discovery), then fall back to config.
             let vault_addr = morpho_vault_override.unwrap_or(config.morpho_vault);
-            let client = MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                MorphoVaultClient::new_with_onchainos(vault_addr, config.usdc, &rpc, config.chain_name)?
+            } else {
+                MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?
+            };
             client.withdraw(amount).await?
         }
     };
@@ -90,18 +101,29 @@ pub async fn execute_rebalance_on(
     // Step 2: Supply to target
     let supply_result = match to {
         Protocol::Aave => {
-            let client = AaveClient::new_with_signer(aave_chain)?;
+            let client = if use_onchainos {
+                AaveClient::new_with_onchainos(aave_chain)?
+            } else {
+                AaveClient::new_with_signer(aave_chain)?
+            };
             let (asset_addr, decimals) = client.resolve_asset("USDC").await?;
             client.supply(asset_addr, supply_amount, decimals).await?
         }
         Protocol::Compound => {
-            let client = CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                CompoundClient::new_with_onchainos(config.compound_comet, config.usdc, &rpc, config.chain_name)?
+            } else {
+                CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?
+            };
             client.supply(supply_amount).await?
         }
         Protocol::Morpho => {
-            // For deposit, use the best vault from yield discovery
             let vault_addr = morpho_vault_override.unwrap_or(config.morpho_vault);
-            let client = MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                MorphoVaultClient::new_with_onchainos(vault_addr, config.usdc, &rpc, config.chain_name)?
+            } else {
+                MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?
+            };
             client.deposit(supply_amount).await?
         }
     };
@@ -141,21 +163,34 @@ pub async fn deposit_only(
     let config = chain_config;
     let rpc = chains::rpc_url_for(config);
     let aave_chain = config.aave_chain_key;
+    let use_onchainos = crate::onchainos::is_available();
     let mut transactions = Vec::new();
 
     let supply_result = match to {
         Protocol::Aave => {
-            let client = AaveClient::new_with_signer(aave_chain)?;
+            let client = if use_onchainos {
+                AaveClient::new_with_onchainos(aave_chain)?
+            } else {
+                AaveClient::new_with_signer(aave_chain)?
+            };
             let (asset_addr, decimals) = client.resolve_asset("USDC").await?;
             client.supply(asset_addr, amount, decimals).await?
         }
         Protocol::Compound => {
-            let client = CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                CompoundClient::new_with_onchainos(config.compound_comet, config.usdc, &rpc, config.chain_name)?
+            } else {
+                CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?
+            };
             client.supply(amount).await?
         }
         Protocol::Morpho => {
             let vault_addr = morpho_vault_override.unwrap_or(config.morpho_vault);
-            let client = MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                MorphoVaultClient::new_with_onchainos(vault_addr, config.usdc, &rpc, config.chain_name)?
+            } else {
+                MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)?
+            };
             client.deposit(amount).await?
         }
     };
@@ -187,24 +222,37 @@ pub async fn emergency_withdraw_on(
     let config = chain_config;
     let rpc = chains::rpc_url_for(config);
     let aave_chain = config.aave_chain_key;
+    let use_onchainos = crate::onchainos::is_available();
 
     let tx_result = match protocol {
         Protocol::Aave => {
-            let client = AaveClient::new_with_signer(aave_chain)?;
+            let client = if use_onchainos {
+                AaveClient::new_with_onchainos(aave_chain)?
+            } else {
+                AaveClient::new_with_signer(aave_chain)?
+            };
             let (asset_addr, decimals) = client.resolve_asset("USDC").await?;
             client.withdraw(asset_addr, U256::MAX, decimals).await?
         }
         Protocol::Compound => {
-            let client = CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?;
+            let client = if use_onchainos {
+                CompoundClient::new_with_onchainos(config.compound_comet, config.usdc, &rpc, config.chain_name)?
+            } else {
+                CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)?
+            };
             let balance = client.get_balance().await?;
             client.withdraw(balance).await?
         }
         Protocol::Morpho => {
-            // Try all known vaults to find the one with balance
             let known_vaults = super::daemon::get_morpho_usdc_vaults(config).await;
             let mut result = None;
             for vault_addr in &known_vaults {
-                if let Ok(m) = MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc) {
+                let m_res = if use_onchainos {
+                    MorphoVaultClient::new_with_onchainos(vault_addr, config.usdc, &rpc, config.chain_name)
+                } else {
+                    MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)
+                };
+                if let Ok(m) = m_res {
                     if let Ok(b) = m.get_balance_usdc().await {
                         if !b.is_zero() {
                             result = Some(m.withdraw(b).await?);
@@ -255,20 +303,38 @@ async fn check_protocol_balance(
     morpho_vault_override: Option<&str>,
 ) -> U256 {
     let rpc = chains::rpc_url_for(config);
+    let use_onchainos = crate::onchainos::is_available();
     match protocol {
-        Protocol::Aave => match AaveClient::new_with_signer(config.aave_chain_key) {
-            Ok(aave) => aave.get_usdc_atoken_balance().await.unwrap_or(U256::ZERO),
-            Err(_) => U256::ZERO,
-        },
+        Protocol::Aave => {
+            let client = if use_onchainos {
+                AaveClient::new_with_onchainos(config.aave_chain_key)
+            } else {
+                AaveClient::new_with_signer(config.aave_chain_key)
+            };
+            match client {
+                Ok(aave) => aave.get_usdc_atoken_balance().await.unwrap_or(U256::ZERO),
+                Err(_) => U256::ZERO,
+            }
+        }
         Protocol::Compound => {
-            match CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc) {
+            let client = if use_onchainos {
+                CompoundClient::new_with_onchainos(config.compound_comet, config.usdc, &rpc, config.chain_name)
+            } else {
+                CompoundClient::new_with_signer(config.compound_comet, config.usdc, &rpc)
+            };
+            match client {
                 Ok(c) => c.get_balance().await.unwrap_or(U256::ZERO),
                 Err(_) => U256::ZERO,
             }
         }
         Protocol::Morpho => {
             let vault_addr = morpho_vault_override.unwrap_or(config.morpho_vault);
-            match MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc) {
+            let client = if use_onchainos {
+                MorphoVaultClient::new_with_onchainos(vault_addr, config.usdc, &rpc, config.chain_name)
+            } else {
+                MorphoVaultClient::new_with_signer(vault_addr, config.usdc, &rpc)
+            };
+            match client {
                 Ok(m) => m.get_balance_usdc().await.unwrap_or(U256::ZERO),
                 Err(_) => U256::ZERO,
             }
@@ -276,23 +342,38 @@ async fn check_protocol_balance(
     }
 }
 
-/// Check wallet USDC balance for post-execution verification.
-async fn check_wallet_usdc(config: &AutoRebalanceConfig) -> U256 {
+/// Resolve the wallet address from onchainos wallet.
+fn resolve_wallet_address() -> Option<alloy::primitives::Address> {
     use alloy::primitives::Address;
-    use alloy::providers::ProviderBuilder;
-    use alloy::signers::local::PrivateKeySigner;
     use std::str::FromStr;
 
-    let pk = match std::env::var("EVM_PRIVATE_KEY") {
-        Ok(pk) => pk,
-        Err(_) => return U256::ZERO,
+    if let Ok(addr_str) = crate::onchainos::get_evm_address() {
+        return Address::from_str(&addr_str).ok();
+    }
+    None
+}
+
+/// Check wallet USDC balance for post-execution verification.
+async fn check_wallet_usdc(config: &AutoRebalanceConfig) -> U256 {
+    // Try onchainos balance query first
+    if crate::onchainos::is_available() {
+        if let Ok(balances) = crate::onchainos::get_token_balances(config.chain_name) {
+            if let Some(usdc) = balances.iter().find(|b| b.symbol.eq_ignore_ascii_case("USDC")) {
+                let raw = (usdc.balance * 1e6) as u64;
+                return U256::from(raw);
+            }
+        }
+        // Fall through to RPC on failure
+    }
+
+    use alloy::primitives::Address;
+    use alloy::providers::ProviderBuilder;
+    use std::str::FromStr;
+
+    let user = match resolve_wallet_address() {
+        Some(addr) => addr,
+        None => return U256::ZERO,
     };
-    let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-    let signer: PrivateKeySigner = match pk.parse() {
-        Ok(s) => s,
-        Err(_) => return U256::ZERO,
-    };
-    let user = signer.address();
 
     let rpc = chains::rpc_url_for(config);
     let provider = match rpc.parse() {

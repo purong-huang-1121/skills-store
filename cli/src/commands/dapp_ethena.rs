@@ -13,19 +13,19 @@ pub enum EthenaCommand {
         /// Wallet address
         address: String,
     },
-    /// Stake USDe → sUSDe (requires EVM_PRIVATE_KEY)
+    /// Stake USDe → sUSDe (requires onchainos wallet login)
     Stake {
         /// Amount of USDe to stake (e.g. "100.5")
         #[arg(long)]
         amount: String,
     },
-    /// Initiate unstake cooldown (requires EVM_PRIVATE_KEY)
+    /// Initiate unstake cooldown (requires onchainos wallet login)
     Cooldown {
         /// Amount of USDe to unstake (e.g. "100.5")
         #[arg(long)]
         amount: String,
     },
-    /// Withdraw USDe after cooldown period has elapsed (requires EVM_PRIVATE_KEY)
+    /// Withdraw USDe after cooldown period has elapsed (requires onchainos wallet login)
     Unstake,
 }
 

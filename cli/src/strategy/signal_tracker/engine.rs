@@ -8,7 +8,7 @@ use serde_json::Value;
 // ── Constants ───────────────────────────────────────────────────────
 
 pub const CHAIN_INDEX: &str = "501";
-pub const SOL_NATIVE: &str = "So11111111111111111111111111111111111111112";
+pub const SOL_NATIVE: &str = "11111111111111111111111111111111";
 pub const SOL_DECIMALS: u32 = 9;
 pub const TICK_INTERVAL_SECS: u64 = 20;
 
