@@ -4,8 +4,8 @@ description: "Use when the user asks about smart money signal trading, 聪明钱
 license: Apache-2.0
 metadata:
   authors:
-    - Ray Zhou (ruixiang.zhou@okg.com)
-    - Cai Shuai (shuai.cai@okg.com)
+    - Ray Zhou
+    - Cai Shuai
   category: "MEME交易"
   chain: Solana
   version: "3.0.0"

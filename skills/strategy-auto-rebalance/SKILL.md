@@ -3,7 +3,7 @@ name: strategy-auto-rebalance
 description: "Use when the user asks about USDC yield optimization, 'auto-rebalance daemon', 'start yield monitor', 'yield farming automation', or mentions running an automated USDC rebalancer across Aave V3, Compound V3, and Morpho. Supports Base and Ethereum mainnet. The daemon periodically checks APY, detects optimal rebalancing opportunities, and executes trades with Telegram alerts. Do NOT use for single-protocol operations — use dapp-aave instead. Do NOT use for one-off yield checks — the daemon handles everything automatically."
 license: Apache-2.0
 metadata:
-  author: 徐易朗 (yilang.xu@okg.com)
+  author: 徐易朗
   category: "DeFi · 套利"
   chain: "Base / Ethereum"
   version: "4.0.0"
@@ -99,7 +99,7 @@ which strategy-auto-rebalance
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   USDC 智能调仓策略
-  作者：徐易朗 (yilang.xu@okg.com)
+  作者：徐易朗
   分类：DeFi · 套利  |  风险：⭐ 低
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -3,7 +3,7 @@ name: strategy-ranking-sniper
 description: "Use when the user asks about SOL ranking sniper, Solana top token sniping, trending token bot, ranking-based auto-trading, 排行榜狙击, SOL sniper bot, momentum score trading, ranking exit strategy, or wants to run/configure/monitor the ranking sniper bot. Covers: automated sniping of SOL tokens entering the OKX trending ranking, 3-layer safety filter (Slot Guard + Advanced Safety + Holder Risk Scan), momentum scoring (0-125), 6-layer exit system (ranking exit + hard stop + fast stop + trailing + time stop + gradient TP), Telegram notifications, and configurable parameters via JSON config file. Do NOT use for manual token lookup — use okx-dex-token. Do NOT use for grid trading — use strategy-grid-trade. Do NOT use for memepump scanning — use strategy-memepump-scanner."
 license: Apache-2.0
 metadata:
-  author: Suning Yao (suning.yao@okg.com)
+  author: Suning Yao
   category: "MEME交易"
   chain: Solana
   version: "1.0.0"
@@ -168,7 +168,7 @@ strategy-ranking-sniper start --budget 0.5 --per-trade 0.05 --dry-run
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   SOL 涨幅榜狙击
-  作者：Suning Yao (suning.yao@okg.com)
+  作者：Suning Yao
   分类：MEME交易  |  风险：⭐⭐⭐ 高
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -3,7 +3,7 @@ name: strategy-grid-trade
 description: "Use when the user asks about grid trading, ETH/USDC bot, automated trading on Base, grid bot status, trade history, PnL report, or mentions running/stopping/monitoring the grid bot. Covers: grid tick execution, start/stop daemon, status/report/history, market analysis, deposit tracking, retry failed trades. Do NOT use for manual token swaps or DeFi lending — use strategy-auto-rebalance for yield optimization."
 license: Apache-2.0
 metadata:
-  author: 单杰 (jie.shan@okg.com)
+  author: 单杰
   category: "DeFi · 交易"
   chain: Base
   version: "2.0.0"
@@ -150,7 +150,7 @@ strategy-grid start
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ETH/USDC 网格交易
-  作者：单杰 (jie.shan@okg.com)
+  作者：单杰
   分类：DeFi · 交易  |  风险：⭐⭐ 中低
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

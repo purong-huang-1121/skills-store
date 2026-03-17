@@ -73,17 +73,17 @@ Present the following welcome message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   A. USDC 智能调仓             ⭐ 低风险 · 稳定收益
-     分类：DeFi · 套利  |  作者：徐易朗 (yilang.xu@okg.com)
+     分类：DeFi · 套利  |  作者：徐易朗
      自动在 Aave/Compound/Morpho 间轮动最高收益
      预估年化 3%~8%，稳定币无币价风险，全自动守护进程
 
   B. ETH/USDC 网格交易         ⭐⭐ 中低风险 · 震荡收益
-     分类：DeFi · 交易  |  作者：单杰 (jie.shan@okg.com)
+     分类：DeFi · 交易  |  作者：单杰
      震荡行情自动低买高卖
      预估年化 10%~30%，自适应波动率，Base 链极低 gas
 
   C. SOL 涨幅榜狙击            ⭐⭐⭐ 高风险 · SOL 动量
-     分类：MEME交易  |  作者：Suning Yao (suning.yao@okg.com)
+     分类：MEME交易  |  作者：Suning Yao
      新币上榜自动买入，跌出自动卖出
      25 项安全检查 + 6 层退出机制
 
@@ -93,7 +93,7 @@ Present the following welcome message:
      多重风控 + Session 连亏熔断保护
 
   E. SOL Memepump 扫描         ⭐⭐⭐ 高风险 · Meme 动量
-     分类：MEME交易  |  作者：Victor Lee (victor.lee@okg.com)
+     分类：MEME交易  |  作者：Victor Lee
      捕捉 Pump.fun 迁移后动量爆发
      三重信号共振，30min 最大持仓保护
 
@@ -300,7 +300,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │  A. USDC 智能调仓 (Auto-Rebalance)                                 │
-│     分类：DeFi · 套利  |  作者：徐易朗 (yilang.xu@okg.com)         │
+│     分类：DeFi · 套利  |  作者：徐易朗                              │
 │                                                                     │
 │  自动在 Aave V3、Compound V3、Morpho 三个协议之间寻找最优 USDC      │
 │  收益率，检测到利差超过阈值时自动调仓。                              │
@@ -313,7 +313,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 特点：TVL 安全监控、Gas 熔断、Telegram 通知                      │
 ├─────────────────────────────────────────────────────────────────────┤
 │  B. ETH/USDC 网格交易 (Grid Trading)                                │
-│     分类：DeFi · 交易  |  作者：单杰 (jie.shan@okg.com)             │
+│     分类：DeFi · 交易  |  作者：单杰                                │
 │                                                                     │
 │  基于 EMA 动态网格，在价格波动中自动低买高卖，赚取网格利润。         │
 │  通过 OKX DEX 聚合器执行链上 swap。                                  │
@@ -343,7 +343,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │  D. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
-│     分类：MEME交易  |  作者：Suning Yao (suning.yao@okg.com)        │
+│     分类：MEME交易  |  作者：Suning Yao                             │
 │                                                                     │
 │  实时监控 Solana 涨幅榜 Top 20，新币上榜自动买入、跌出自动卖出。     │
 │  不预判哪个币能涨，而是吃上榜后的那一段动量。                        │
@@ -374,7 +374,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │          tokenDevInfo, tokenBundleInfo, balances, quote, swap)       │
 ├─────────────────────────────────────────────────────────────────────┤
 │  F. SOL Memepump 扫描 (Memepump Scanner)                             │
-│     分类：MEME交易  |  作者：Victor Lee (victor.lee@okg.com)        │
+│     分类：MEME交易  |  作者：Victor Lee                             │
 │                                                                     │
 │  实时扫描 Pump.fun 迁移代币，TX加速 + 成交量突增 + 买压主导          │
 │  三信号共振时自动买入——捕捉安全验证后的动量爆发瞬间。                │

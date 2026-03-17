@@ -3,7 +3,7 @@ name: strategy-memepump-scanner
 description: "Use when the user asks about meme token scanning, pump.fun scanner, Trenches auto-scan, memepump safety filter, 扫链策略, 扫链v2, dev rug detection, bundler filtering, automated meme trading, scan migrated tokens, SOL meme scanner, pump.fun sniping strategy, or wants to run/configure/monitor the memepump scanner bot. Covers: safety-filtered scanning of MIGRATED pump.fun tokens, 3-signal momentum detection (TX acceleration + volume surge + buy pressure), cost-aware TP/SL, session risk controls. Do NOT use for manual token lookup — use okx-dex-trenches. Do NOT use for grid trading — use strategy-grid-trade."
 license: Apache-2.0
 metadata:
-  author: Victor Lee (victor.lee@okg.com)
+  author: Victor Lee
   category: "MEME交易"
   chain: Solana
   version: "2.4.1"
@@ -145,7 +145,7 @@ which strategy-memepump-scanner
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   SOL Memepump 扫描
-  作者：Victor Lee (victor.lee@okg.com)
+  作者：Victor Lee
   分类：MEME交易  |  风险：⭐⭐⭐ 高
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
