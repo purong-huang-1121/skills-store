@@ -96,6 +96,13 @@ semver_cmp() {
   IFS="$local_ifs"
   a1=${1:-0}; a2=${2:-0}; a3=${3:-0}
   b1=${4:-0}; b2=${5:-0}; b3=${6:-0}
+  # Strip pre-release suffix (e.g. "0-beta" → "0") before numeric compare
+  a1=$(echo "$a1" | cut -d'-' -f1)
+  a2=$(echo "$a2" | cut -d'-' -f1)
+  a3=$(echo "$a3" | cut -d'-' -f1)
+  b1=$(echo "$b1" | cut -d'-' -f1)
+  b2=$(echo "$b2" | cut -d'-' -f1)
+  b3=$(echo "$b3" | cut -d'-' -f1)
   if [ "$a1" -gt "$b1" ] 2>/dev/null; then return 1; fi
   if [ "$a1" -lt "$b1" ] 2>/dev/null; then return 2; fi
   if [ "$a2" -gt "$b2" ] 2>/dev/null; then return 1; fi
