@@ -44,13 +44,21 @@ static POLYGON: UniswapChainConfig = UniswapChainConfig {
     quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
 };
 
+static BASE: UniswapChainConfig = UniswapChainConfig {
+    chain_id: 8453,
+    rpc_url: "https://base-rpc.publicnode.com",
+    swap_router: "0x2626664c2603336E57B271c5C0b26F421741e481",
+    quoter_v2: "0x3d4e44Eb1374240CE5F1B136041f0B71EB3Dd5d",
+};
+
 pub fn get_chain_config(chain: &str) -> Result<&'static UniswapChainConfig> {
     match chain.to_lowercase().as_str() {
         "arbitrum" | "arb" | "42161" => Ok(&ARBITRUM),
         "ethereum" | "eth" | "1" => Ok(&ETHEREUM),
         "polygon" | "matic" | "137" => Ok(&POLYGON),
+        "base" | "8453" => Ok(&BASE),
         _ => bail!(
-            "Unsupported chain '{}' for Uniswap. Supported: arbitrum, ethereum, polygon",
+            "Unsupported chain '{}' for Uniswap. Supported: arbitrum, ethereum, polygon, base",
             chain
         ),
     }
@@ -82,6 +90,13 @@ pub fn resolve_token(symbol: &str, chain_id: u64) -> Result<(Address, u8)> {
         ("DAI", 1) => Ok((addr("0x6B175474E89094C44Da98b954EedeAC495271d0F"), 18)),
         ("SUSDE", 1) => Ok((addr("0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"), 18)),
         ("USDE", 1) => Ok((addr("0x4c9EDD5852cd905f086C759E8383e09bff1E68B3"), 18)),
+        // Base
+        ("WETH", 8453) => Ok((addr("0x4200000000000000000000000000000000000006"), 18)),
+        ("ETH", 8453)  => Ok((addr("0x4200000000000000000000000000000000000006"), 18)),
+        ("USDC", 8453) => Ok((addr("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"), 6)),
+        ("USDBC", 8453) => Ok((addr("0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"), 6)),
+        ("DAI", 8453)  => Ok((addr("0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"), 18)),
+        ("CBETH", 8453) => Ok((addr("0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"), 18)),
         // Polygon
         ("WETH", 137) => Ok((addr("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"), 18)),
         ("USDC", 137) => Ok((addr("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"), 6)),
