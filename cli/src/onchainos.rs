@@ -97,7 +97,7 @@ pub fn is_available() -> bool {
 
 /// Get the EVM address for the current onchainos wallet account.
 ///
-/// Calls `onchainos wallet balance` (which returns `evmAddress` per account)
+/// Calls `onchainos wallet balance` (which returns `evmAddress` at the top level)
 /// and caches the result for the process lifetime.
 pub fn get_evm_address() -> Result<String> {
     // Return cached value if available
@@ -107,39 +107,19 @@ pub fn get_evm_address() -> Result<String> {
 
     let data = run_onchainos(&["wallet", "balance"])?;
 
-    // Response: { "accounts": [{ "evmAddress": "0x...", "isActive": true, ... }] }
-    let accounts = data["accounts"]
-        .as_array()
-        .context("onchainos wallet balance: missing accounts array")?;
+    // Response: { "evmAddress": "0x...", "solAddress": "...", "details": [...], ... }
+    let addr = data["evmAddress"]
+        .as_str()
+        .filter(|a| !a.is_empty() && a.starts_with("0x"))
+        .context("onchainos wallet balance: missing or invalid evmAddress")?;
 
-    // Find the active account's EVM address
-    for account in accounts {
-        if account["isActive"].as_bool() == Some(true) {
-            if let Some(addr) = account["evmAddress"].as_str() {
-                if !addr.is_empty() && addr.starts_with("0x") {
-                    let _ = CACHED_EVM_ADDRESS.set(addr.to_string());
-                    return Ok(addr.to_string());
-                }
-            }
-        }
-    }
-
-    // Fallback: first account with an EVM address
-    for account in accounts {
-        if let Some(addr) = account["evmAddress"].as_str() {
-            if !addr.is_empty() && addr.starts_with("0x") {
-                let _ = CACHED_EVM_ADDRESS.set(addr.to_string());
-                return Ok(addr.to_string());
-            }
-        }
-    }
-
-    bail!("onchainos wallet: no EVM address found — please login first");
+    let _ = CACHED_EVM_ADDRESS.set(addr.to_string());
+    Ok(addr.to_string())
 }
 
 /// Get the Solana address for the current onchainos wallet account.
 ///
-/// Calls `onchainos wallet balance` (which returns `solAddress` per account)
+/// Calls `onchainos wallet balance` (which returns `solAddress` at the top level)
 /// and caches the result for the process lifetime.
 pub fn get_sol_address() -> Result<String> {
     // Return cached value if available
@@ -149,33 +129,14 @@ pub fn get_sol_address() -> Result<String> {
 
     let data = run_onchainos(&["wallet", "balance"])?;
 
-    let accounts = data["accounts"]
-        .as_array()
-        .context("onchainos wallet balance: missing accounts array")?;
+    // Response: { "evmAddress": "0x...", "solAddress": "...", "details": [...], ... }
+    let addr = data["solAddress"]
+        .as_str()
+        .filter(|a| !a.is_empty())
+        .context("onchainos wallet balance: missing or invalid solAddress")?;
 
-    // Find the active account's Solana address
-    for account in accounts {
-        if account["isActive"].as_bool() == Some(true) {
-            if let Some(addr) = account["solAddress"].as_str() {
-                if !addr.is_empty() {
-                    let _ = CACHED_SOL_ADDRESS.set(addr.to_string());
-                    return Ok(addr.to_string());
-                }
-            }
-        }
-    }
-
-    // Fallback: first account with a Solana address
-    for account in accounts {
-        if let Some(addr) = account["solAddress"].as_str() {
-            if !addr.is_empty() {
-                let _ = CACHED_SOL_ADDRESS.set(addr.to_string());
-                return Ok(addr.to_string());
-            }
-        }
-    }
-
-    bail!("onchainos wallet: no Solana address found — please login first");
+    let _ = CACHED_SOL_ADDRESS.set(addr.to_string());
+    Ok(addr.to_string())
 }
 
 /// Query token balance via `onchainos wallet balance --chain <chain>`.
