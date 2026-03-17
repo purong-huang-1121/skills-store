@@ -73,13 +73,13 @@ fn domain_separator(chain_id: u64) -> [u8; 32] {
 }
 
 /// Compute EIP-712 struct hash for ClobAuth.
-fn clob_auth_struct_hash(address: &str, timestamp: &str, nonce: u64) -> [u8; 32] {
+fn clob_auth_struct_hash(address: &str, timestamp: &str, nonce: u64) -> Result<[u8; 32]> {
     let type_hash =
         keccak256(b"ClobAuth(address address,string timestamp,uint256 nonce,string message)");
 
     let mut addr_bytes = [0u8; 32];
-    let addr_raw =
-        hex::decode(address.strip_prefix("0x").unwrap_or(address)).expect("invalid address hex");
+    let addr_raw = hex::decode(address.strip_prefix("0x").unwrap_or(address))
+        .context("invalid address hex")?;
     addr_bytes[12..].copy_from_slice(&addr_raw);
 
     let timestamp_hash = keccak256(timestamp.as_bytes());
@@ -95,7 +95,7 @@ fn clob_auth_struct_hash(address: &str, timestamp: &str, nonce: u64) -> [u8; 32]
     encoded.extend_from_slice(&nonce_bytes);
     encoded.extend_from_slice(&message_hash);
 
-    keccak256(&encoded)
+    Ok(keccak256(&encoded))
 }
 
 /// Sign the ClobAuth EIP-712 message.
@@ -107,7 +107,7 @@ pub fn sign_clob_auth(
     chain_id: u64,
 ) -> Result<String> {
     let domain_sep = domain_separator(chain_id);
-    let struct_hash = clob_auth_struct_hash(address, timestamp, nonce);
+    let struct_hash = clob_auth_struct_hash(address, timestamp, nonce)?;
 
     let mut msg = Vec::with_capacity(66);
     msg.push(0x19);
@@ -146,7 +146,8 @@ fn eip55_checksum(address: &str) -> String {
     checksummed.push_str("0x");
     for (i, c) in addr_lower.chars().enumerate() {
         if c.is_ascii_alphabetic() {
-            let nibble = u8::from_str_radix(&hash_hex[i..i + 1], 16).unwrap();
+            // hash_hex is keccak256 output encoded as hex, so every char is guaranteed valid
+            let nibble = u8::from_str_radix(&hash_hex[i..i + 1], 16).unwrap_or(0);
             if nibble >= 8 {
                 checksummed.push(c.to_ascii_uppercase());
             } else {
