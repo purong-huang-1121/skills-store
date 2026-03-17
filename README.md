@@ -2,6 +2,11 @@
 
 链上 DeFi 智能体技能包，集成主流协议操作与自动化交易策略。支持 Claude Code、OpenClaw 等 AI 编程助手。
 
+Skills Store 收录了 Web3 Team 基于 Onchain OS 构建的上层策略 Skill，安装后可查看所有已上线的策略，选择你需要的策略安装并运行。
+
+- 策略使用过程中如有体验反馈，可联系策略作者交流
+- 如果你也想分享自己的策略，欢迎联系 @甘明涛 Sheldon Gan / @Ocean Fan 范海洋
+
 ## 包含技能
 
 ### 核心技能（dApp 协议集成）
@@ -29,9 +34,39 @@
 | `strategy-signal-tracker` | `signal-tracker` | 聪明钱/KOL/巨鲸信号跟单，17 点安全过滤 |
 | `strategy-memepump-scanner` | `scanner` | Pump.fun 迁移代币自动扫描交易，3 信号动量检测 |
 
-## 快速安装
+## 安装指南
 
-### 推荐方式（npx）
+### 前提条件
+
+首先安装 Agentic Wallet，参考 [Agentic Wallet 内测参与流程](https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1)。
+
+### 方式一：使用 Claude Code CLI 安装（推荐）
+
+复制以下命令在终端中运行，安装过程中可选配置 Telegram 机器人 Token 和 Chat ID 以接收通知：
+
+```bash
+curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/reinstall.sh -o /tmp/reinstall.sh && sh /tmp/reinstall.sh
+```
+
+安装完成后，在终端中运行 Claude（跳过权限检查）：
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+> 如不想跳过权限检查，直接输入 `claude` 即可。
+
+启动后可用自然语言询问已安装的技能，例如"你有什么技能？"，然后选择你需要的策略运行。
+
+### 方式二：使用 OpenClaw 安装
+
+直接将以下命令发送给 Agent，它会自动完成安装：
+
+```bash
+curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/reinstall.sh -o /tmp/reinstall.sh && sh /tmp/reinstall.sh
+```
+
+### 方式三：npx 安装
 
 ```bash
 npx skills add skills-store
@@ -39,7 +74,7 @@ npx skills add skills-store
 
 支持 Claude Code、OpenClaw、Cursor、Codex CLI 等环境，自动检测安装路径。
 
-### Shell 脚本安装 CLI（macOS / Linux）
+### 方式四：Shell 脚本安装 CLI（macOS / Linux）
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/purong-huang-1121/skills-store/main/install.sh | sh
@@ -81,6 +116,9 @@ EVM_ADDRESS="0x your-evm-address"
 TELEGRAM_BOT_TOKEN="your-bot-token"
 TELEGRAM_CHAT_ID="your-chat-id"
 ```
+
+> **Q: 如何配置 Telegram Bot？**
+> A: 需要在环境变量中配置 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID`，如何获取可以直接问 Agent。
 
 ## 支持链
 
