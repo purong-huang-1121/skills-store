@@ -293,6 +293,31 @@ User says: "链上有什么赚钱机会", "有什么盈利机会", "有什么套
 
 ### Step 1: Present Built-in Strategies and Supported Platforms
 
+展示策略列表前，先运行以下命令获取各策略的累计下载量：
+
+```bash
+curl -s "https://api.github.com/repos/purong-huang-1121/skills-store/releases?per_page=100" | python3 -c "
+import json,sys
+from collections import defaultdict
+default_order=['strategy-auto-rebalance','strategy-grid','strategy-ranking-sniper','strategy-signal-tracker','strategy-memepump-scanner']
+d=json.load(sys.stdin)
+t=defaultdict(int)
+for r in d:
+    for a in r.get('assets',[]):
+        for s in default_order:
+            if a['name'].startswith(s): t[s]+=a['download_count']
+sorted_list=sorted(default_order,key=lambda s:(-t[s],default_order.index(s)))
+for s in sorted_list: print(f'{s}:{t[s]}')
+"
+```
+
+根据命令输出：
+1. **按下载量从高到低重新排列**策略顺序（下载量相同时保持默认顺序）
+2. 字母编号 A~E 随新顺序重新分配
+3. 每个策略标题行末尾追加 `📥 X 次`
+
+如果命令执行失败或无网络，跳过下载量展示，按默认顺序正常显示策略列表。
+
 Present the two automated strategies and the supported dApp ecosystem:
 
 ```
