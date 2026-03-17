@@ -124,7 +124,7 @@ which plugin-store
 ### 安装后 / 能力查询
 - User **just installed** this skill, or asks **"你能做什么"**, **"有什么技能"**, **"支持哪些策略"**, **"what can you do"**, **"list skills"** → **Show Post-Install Welcome** (see above)
 
-### dApp 平台（已内置，直接执行 plugin-store 命令）
+### dApp 协议（已内置，直接执行 plugin-store 命令）
 - User asks about **Aave** (存款、借贷、利率) → see **[Aave V3 CLI Reference]** below, run `plugin-store aave`
 - User asks about **Morpho** (vault、借贷) → see **[Morpho CLI Reference]** below, run `plugin-store morpho`
 - User asks about **Uniswap** (换币、swap、报价) → see **[Uniswap CLI Reference]** below, run `plugin-store uniswap`
@@ -402,10 +402,10 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 请选择：输入 A ~ F
 
-此外，我们还支持以下 dApp 平台，可以直接交互：
+此外，我们还支持以下 dApp 协议，可以直接交互：
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  支持的 dApp 平台                                                   │
+│  支持的 dApp 协议                                                   │
 ├──────────────┬──────────────────────┬───────────────────────────────┤
 │  平台         │  类型                │  支持链                       │
 ├──────────────┼──────────────────────┼───────────────────────────────┤

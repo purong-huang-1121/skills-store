@@ -85,7 +85,7 @@ Activate this section when ANY of the following is true:
 ### 安装后 / 能力查询 / 机会查询
 - User **just installed** this skill, or asks **"你能做什么"**, **"有什么技能"**, **"有什么功能"**, **"有什么机会"**, **"有什么赚钱机会"**, **"what can you do"**, **"list skills"** → **Show Entry Point: Strategy Discovery** (see below, with full descriptions, author, category)
 
-### dApp 平台
+### dApp 协议
 - User asks about **Aave** (存款、借贷、利率) → see **[Aave V3 CLI Reference]** below, run `skills-store aave`
 - User asks about **Morpho** (vault、借贷) → see **[Morpho CLI Reference]** below, run `skills-store morpho`
 - User asks about **Uniswap** (换币、swap、报价) → see **[Uniswap CLI Reference]** below, run `skills-store uniswap`
