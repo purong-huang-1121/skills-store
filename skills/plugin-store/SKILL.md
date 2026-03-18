@@ -291,13 +291,17 @@ onchainos --version
   > 安装完成后运行 `onchainos wallet login` 登录，然后继续。"
 - **已安装且版本 >= 1.0.5** → 继续下方路由
 
+**字母选择（A/B/C/D/E）：根据上方实际展示的顺序动态映射**，不得硬编码字母与策略的对应关系。例如若展示时 Ranking Sniper 排在第一位显示为 A，则用户输入"A"应路由到 Flow C（Ranking Sniper）。
+
+**按策略名称/关键词路由（始终有效）：**
+
 | User says | Action |
 |-----------|--------|
-| "A", "调仓", "Auto Rebalance", "USDC 收益" | → Go to **Flow A** |
-| "B", "网格", "Grid", "Grid Trading" | → Go to **Flow B** |
-| "C", "涨幅榜", "Ranking Sniper", "榜单狙击" | → Go to **Flow C** |
-| "D", "聪明钱", "Signal Tracker", "跟单", "Smart Money" | → Go to **Flow D** |
-| "E", "Memepump", "Pump.fun", "Meme Scanner" | → Go to **Flow E** |
+| "调仓", "Auto Rebalance", "USDC 收益", "auto-rebalance" | → Go to **Flow A** |
+| "网格", "Grid", "Grid Trading", "grid" | → Go to **Flow B** |
+| "涨幅榜", "Ranking Sniper", "榜单狙击", "ranking" | → Go to **Flow C** |
+| "聪明钱", "Signal Tracker", "跟单", "Smart Money", "signal" | → Go to **Flow D** |
+| "Memepump", "Pump.fun", "Meme Scanner", "memepump" | → Go to **Flow E** |
 | "都要", "both", "两个都跑" | → Explain that multiple strategies can run concurrently, guide one by one |
 | "Aave", "存款", "借贷" | → Route to `plugin-store aave` commands |
 | "Uniswap", "换币", "swap" | → Route to `plugin-store uniswap` commands |

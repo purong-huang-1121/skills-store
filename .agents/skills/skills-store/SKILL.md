@@ -420,14 +420,18 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 ### Step 2: User Selects Strategy or Platform
 
+**字母选择（A/B/C/D/E）：根据上方实际展示的顺序动态映射**，不得硬编码字母与策略的对应关系。例如若展示时 Ranking Sniper 排在第一位显示为 A，则用户输入"A"应路由到 Flow D（Ranking Sniper）。
+
+**按策略名称/关键词路由（始终有效）：**
+
 | User says | Action |
 |-----------|--------|
-| "A", "调仓", "Auto Rebalance", "USDC 收益" | → Go to **Flow A** |
-| "B", "网格", "Grid", "Grid Trading" | → Go to **Flow B** |
-| "C", "杠杆循环", "Leverage Loop", "套利" | → Go to **Flow C** |
-| "D", "涨幅榜", "Ranking Sniper", "榜单狙击" | → Go to **Flow D** |
-| "E", "聪明钱", "Signal Tracker", "跟单", "Smart Money" | → Go to **Flow E** |
-| "F", "Memepump", "Pump.fun", "Meme Scanner" | → Go to **Flow F** |
+| "调仓", "Auto Rebalance", "USDC 收益", "auto-rebalance" | → Go to **Flow A** |
+| "网格", "Grid", "Grid Trading", "grid" | → Go to **Flow B** |
+| "杠杆循环", "Leverage Loop", "套利" | → Go to **Flow C** |
+| "涨幅榜", "Ranking Sniper", "榜单狙击", "ranking" | → Go to **Flow D** |
+| "聪明钱", "Signal Tracker", "跟单", "Smart Money", "signal" | → Go to **Flow E** |
+| "Memepump", "Pump.fun", "Meme Scanner", "memepump" | → Go to **Flow F** |
 | "都要", "both", "两个都跑" | → Explain that multiple strategies can run concurrently, guide one by one |
 | "Aave", "存款", "借贷" | → Route to `plugin-store aave` commands |
 | "Uniswap", "换币", "swap" | → Route to `plugin-store uniswap` commands |
