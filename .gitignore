@@ -46,4 +46,4 @@ yarn-error.log*
 .zigbuild-cache/
 
 # Docs (local only)
-docs/
+docs/skills/.DS_Store
