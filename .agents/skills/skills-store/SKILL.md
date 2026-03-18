@@ -331,7 +331,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 风险等级：⭐⭐ 中低（持有 ETH 有币价风险，网格对冲部分波动）      │
 │  ● 预估年化：10%~30%（取决于市场波动率，震荡行情最佳）              │
 │  ● 运行方式：后台守护进程，默认每 60 秒执行一次（可通过               │
-│    plugin-store grid set --key tick_interval_secs --value N 调整）      │
+│    strategy-grid set --key tick_interval_secs --value N 调整）      │
 │  ● 特点：自适应波动率、风控熔断、仓位限制、失败重试                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  C. 稳定币杠杆循环 (Aave Leverage Loop)                              │
@@ -488,7 +488,7 @@ If user provides wallet address or says "帮我查" → use `plugin-store portfo
 After confirmation, execute:
 
 ```bash
-plugin-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
+strategy-auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 ```
 
 ### Step A4: Post-launch guidance
@@ -497,12 +497,12 @@ plugin-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 智能调仓守护进程已启动！
 
 后续操作：
-• 查看状态：plugin-store auto-rebalance status
-• 停止运行：plugin-store auto-rebalance stop
+• 查看状态：strategy-auto-rebalance status
+• 停止运行：strategy-auto-rebalance stop
 • 设置 Telegram 通知（推荐）：
   export TELEGRAM_BOT_TOKEN=<TOKEN>
   export TELEGRAM_CHAT_ID=<CHAT_ID>
-  plugin-store auto-rebalance start --chain {chain}
+  strategy-auto-rebalance start --chain {chain}
 ```
 
 ---
@@ -530,7 +530,7 @@ If user provides wallet address or says "帮我查" → use `plugin-store portfo
 Before launching, run market analysis:
 
 ```bash
-plugin-store grid analyze
+strategy-grid analyze
 ```
 
 Present results to user:
@@ -564,7 +564,7 @@ Market comment logic:
 | 链 | Base |
 | 可用资金 | ~${total_usd} (ETH + USDC) |
 | 网格级数 | 6 |
-| 执行频率 | 每 60 秒（可通过 plugin-store grid set --key tick_interval_secs 调整） |
+| 执行频率 | 每 60 秒（可通过 strategy-grid set --key tick_interval_secs 调整） |
 | 单笔上限 | 12% 总仓位 |
 | 仓位保护 | ETH 占比 35%~65% |
 
@@ -574,7 +574,7 @@ Market comment logic:
 After confirmation, execute:
 
 ```bash
-plugin-store grid start
+strategy-grid start
 ```
 
 ### Step B4: Post-launch guidance
@@ -583,13 +583,13 @@ plugin-store grid start
 网格交易 Bot 已启动！
 
 后续操作：
-• 查看状态：plugin-store grid status
-• 查看收益：plugin-store grid report
-• 交易记录：plugin-store grid history
-• 停止运行：plugin-store grid stop
-• 市场分析：plugin-store grid analyze
-• 调整参数：plugin-store grid set --key <name> --value <value>
-• 查看配置：plugin-store grid config
+• 查看状态：strategy-grid status
+• 查看收益：strategy-grid report
+• 交易记录：strategy-grid history
+• 停止运行：strategy-grid stop
+• 市场分析：strategy-grid analyze
+• 调整参数：strategy-grid set --key <name> --value <value>
+• 查看配置：strategy-grid config
 ```
 
 ---
@@ -813,15 +813,15 @@ Alerts:
    - 追踪止损（+8%激活/12%回撤）> 时间止损（6h）> 梯度止盈（+5%/+15%/+30% 分三批）
 5. **安全网**: 停止引擎自动清仓所有持仓，日亏损上限 15% 自动停机
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store ranking-sniper tick` | 执行单次轮询 |
-| `plugin-store ranking-sniper start` | 启动守护进程 |
-| `plugin-store ranking-sniper stop` | 停止运行 |
-| `plugin-store ranking-sniper status` | 查看状态 |
-| `plugin-store ranking-sniper report` | 详细 PnL 报告 |
+| `strategy-ranking-sniper tick` | 执行单次轮询 |
+| `strategy-ranking-sniper start` | 启动守护进程 |
+| `strategy-ranking-sniper stop` | 停止运行 |
+| `strategy-ranking-sniper status` | 查看状态 |
+| `strategy-ranking-sniper report` | 详细 PnL 报告 |
 
 ### Step D1: Confirm and configure
 
@@ -829,7 +829,7 @@ Alerts:
 SOL 涨幅榜狙击 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥（用于签署链上交易）
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL（用于交易 + Gas）
 • plugin-store 已安装
 
@@ -842,10 +842,10 @@ SOL 涨幅榜狙击 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store ranking-sniper config
+strategy-ranking-sniper config
 
 # 启动
-plugin-store ranking-sniper start
+strategy-ranking-sniper start
 ```
 
 ---
@@ -875,15 +875,15 @@ plugin-store ranking-sniper start
    - 趋势时间止损（15min K线反转）+ 4h 硬性退出
 8. **Session 风控**: 连续亏损 3 次暂停 10min / 累计亏损 0.05 SOL 暂停 30min / 累计 0.10 SOL 终止
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store signal-tracker tick` | 执行单次轮询 |
-| `plugin-store signal-tracker start` | 启动守护进程 |
-| `plugin-store signal-tracker stop` | 停止运行 |
-| `plugin-store signal-tracker status` | 查看状态 |
-| `plugin-store signal-tracker report` | 详细 PnL 报告 |
+| `strategy-signal-tracker tick` | 执行单次轮询 |
+| `strategy-signal-tracker start` | 启动守护进程 |
+| `strategy-signal-tracker stop` | 停止运行 |
+| `strategy-signal-tracker status` | 查看状态 |
+| `strategy-signal-tracker report` | 详细 PnL 报告 |
 
 ### Step E1: Confirm and configure
 
@@ -891,7 +891,7 @@ plugin-store ranking-sniper start
 SOL 聪明钱跟单 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL
 • plugin-store 已安装
 
@@ -904,13 +904,13 @@ SOL 聪明钱跟单 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store signal-tracker config
+strategy-signal-tracker config
 
 # 启动（推荐先用 dry-run 测试）
-plugin-store signal-tracker start --dry-run
+strategy-signal-tracker start --dry-run
 
 # 确认无误后正式启动
-plugin-store signal-tracker start
+strategy-signal-tracker start
 ```
 
 ---
@@ -944,16 +944,16 @@ plugin-store signal-tracker start
    - 时间止损（SCALP 5min / HOT 8min / QUIET 15min）
    - TP1 后 breakeven stop + Trailing -5%，最大持仓 30min
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store scanner tick` | 执行单次扫描 |
-| `plugin-store scanner start` | 启动守护进程 |
-| `plugin-store scanner stop` | 停止运行 |
-| `plugin-store scanner status` | 查看状态 |
-| `plugin-store scanner report` | 详细 PnL 报告 |
-| `plugin-store scanner analyze` | Dry-run 分析 |
+| `strategy-memepump-scanner tick` | 执行单次扫描 |
+| `strategy-memepump-scanner start` | 启动守护进程 |
+| `strategy-memepump-scanner stop` | 停止运行 |
+| `strategy-memepump-scanner status` | 查看状态 |
+| `strategy-memepump-scanner report` | 详细 PnL 报告 |
+| `strategy-memepump-scanner analyze` | Dry-run 分析 |
 
 ### Step F1: Confirm and configure
 
@@ -961,7 +961,7 @@ plugin-store signal-tracker start
 SOL Memepump 扫描 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL
 • plugin-store 已安装
 
@@ -974,13 +974,13 @@ SOL Memepump 扫描 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store scanner config
+strategy-memepump-scanner config
 
 # 先用 analyze 观察
-plugin-store scanner analyze
+strategy-memepump-scanner analyze
 
 # 启动
-plugin-store scanner start
+strategy-memepump-scanner start
 ```
 
 ---
@@ -997,7 +997,7 @@ plugin-store scanner start
 | 最小资金 | ~$500 (ETH) | ~$50 | ~$100 (Arb) | ~0.5 SOL | ~0.3 SOL | ~0.2 SOL |
 | 需要的密钥 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 |
 | 运行方式 | 后台守护进程 | 后台守护进程 | AI 引导执行 | 后台守护进程 | 后台守护进程 | 后台守护进程 |
-| CLI 命令 | `plugin-store auto-rebalance` | `plugin-store grid` | `plugin-store aave` | `plugin-store ranking-sniper` | `plugin-store signal-tracker` | `plugin-store scanner` |
+| CLI 命令 | `strategy-auto-rebalance` | `strategy-grid` | `plugin-store aave` | `strategy-ranking-sniper` | `strategy-signal-tracker` | `strategy-memepump-scanner` |
 
 ## Authentication Requirements
 
