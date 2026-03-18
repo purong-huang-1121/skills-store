@@ -7,7 +7,7 @@ set -e
 echo "=== Step 1: 删除 plugin-store 二进制 ==="
 
 # 在常见目录和 PATH 中查找并删除
-for dir in "$HOME/.cargo/bin" "$HOME/.local/bin" /usr/local/bin /usr/bin; do
+for dir in "$HOME/.plugin-store" "$HOME/.local/bin" /usr/local/bin /usr/bin; do
   if [ -f "$dir/plugin-store" ]; then
     echo "删除 $dir/plugin-store"
     rm -f "$dir/plugin-store"
@@ -22,7 +22,7 @@ if [ -n "$found" ]; then
 fi
 
 # 清理缓存目录
-rm -rf "$HOME/.cargo/bin/.plugin-store" 2>/dev/null || true
+rm -rf "$HOME/.plugin-store/.plugin-store" 2>/dev/null || true
 rm -rf "$HOME/.local/bin/.plugin-store" 2>/dev/null || true
 
 echo "✅ plugin-store 二进制已清理"
@@ -117,7 +117,7 @@ echo ""
 echo "=== Step 6: 安装 plugin-store 二进制 ==="
 
 curl -sSL https://raw.githubusercontent.com/purong-huang-1121/plugin-store/main/install.sh | sh
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.plugin-store:$PATH"
 
 if ! command -v plugin-store >/dev/null 2>&1; then
   echo "❌ plugin-store 二进制安装失败，请检查网络后重试" >&2
@@ -154,8 +154,8 @@ fi
 echo ""
 echo "=== Step 8: 配置 Telegram 通知（可选） ==="
 
-ENV_FILE="$HOME/.cargo/bin/.env"
-mkdir -p "$HOME/.cargo/bin"
+ENV_FILE="$HOME/.plugin-store/.env"
+mkdir -p "$HOME/.plugin-store"
 
 if [ ! -f "$ENV_FILE" ]; then
   cat > "$ENV_FILE" <<'EOF'

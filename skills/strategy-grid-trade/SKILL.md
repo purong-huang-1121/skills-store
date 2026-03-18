@@ -121,7 +121,7 @@ which strategy-grid
    ```
    If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
 
-2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+2. **Telegram notifications (optional)**: Configure in `~/.plugin-store/.env`:
    ```
    TELEGRAM_BOT_TOKEN=your_bot_token
    TELEGRAM_CHAT_ID=your_chat_id
@@ -132,7 +132,7 @@ which strategy-grid
 - **OKX API**: Handled by onchainos CLI internally
 - **EVM Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
 
-**Optional env vars** in `~/.cargo/bin/.env`:
+**Optional env vars** in `~/.plugin-store/.env`:
 ```bash
 BASE_RPC_URL=...        # Custom Base RPC (default: public endpoint)
 ```
@@ -206,12 +206,12 @@ Before starting the daemon, check:
 1. **onchainos wallet**: `onchainos wallet status` — must be logged in
 2. **Telegram notifications** (optional but recommended):
    ```bash
-   cat ~/.cargo/bin/.env
+   cat ~/.plugin-store/.env
    ```
    If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
-   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.plugin-store/.env`"
    >
-   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.plugin-store/.env`.
 
 Checks passed → 直接进入 **Quickstart**，**不再询问用户**
 

@@ -125,21 +125,21 @@ npx skills add purong-huang-1121/plugin-store --skill strategy-grid-trade --yes
 安装命令执行完毕后，检查 Telegram 通知是否已配置：
 
 ```bash
-cat ~/.cargo/bin/.env 2>/dev/null
+cat ~/.plugin-store/.env 2>/dev/null
 ```
 
 如果 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID` 为空或文件不存在，提示用户：
 
 > "Telegram 通知未配置。配置后策略运行时会及时推送交易通知（买入/卖出/止损/异常等）。"
 >
-> "配置文件路径：`~/.cargo/bin/.env`，需要填写："
+> "配置文件路径：`~/.plugin-store/.env`，需要填写："
 > ```
 > TELEGRAM_BOT_TOKEN=你的BotToken
 > TELEGRAM_CHAT_ID=你的ChatID
 > ```
 > "是否现在配置？我可以帮你打开文件编辑。"
 
-如果用户同意，帮助编辑 `~/.cargo/bin/.env` 文件。如果用户跳过，继续下一步。
+如果用户同意，帮助编辑 `~/.plugin-store/.env` 文件。如果用户跳过，继续下一步。
 
 **重要：安装后直接读取 Skill 文件继续引导**
 

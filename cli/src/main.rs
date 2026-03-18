@@ -56,6 +56,7 @@ pub enum Commands {
 
 #[tokio::main]
 async fn main() {
+    plugin_store_cli::config::load_dotenv();
     plugin_store_cli::update::check("plugin-store", env!("CARGO_PKG_VERSION"));
     let cli = Cli::parse();
 

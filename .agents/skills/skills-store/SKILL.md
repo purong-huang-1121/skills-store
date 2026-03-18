@@ -188,7 +188,7 @@ npx skills add purong-huang-1121/plugin-store --skill strategy-grid-trade --yes
 # 使用 onchainos 钱包登录（EVM 链签名）
 onchainos wallet login
 
-# 可选：Telegram 通知（在 ~/.cargo/bin/.env 中配置）
+# 可选：Telegram 通知（在 ~/.plugin-store/.env 中配置）
 TELEGRAM_BOT_TOKEN=你的BotToken
 TELEGRAM_CHAT_ID=你的ChatID
 ```
@@ -200,7 +200,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 # 使用 onchainos 钱包登录（Base 链签名）
 onchainos wallet login
 
-# 可选（~/.cargo/bin/.env）
+# 可选（~/.plugin-store/.env）
 BASE_RPC_URL=你的自定义RPC（默认使用公共节点）
 TELEGRAM_BOT_TOKEN=你的BotToken
 TELEGRAM_CHAT_ID=你的ChatID
@@ -213,7 +213,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 # 使用 onchainos 钱包登录（Solana 链签名）
 onchainos wallet login
 
-# 可选（~/.cargo/bin/.env）
+# 可选（~/.plugin-store/.env）
 TELEGRAM_BOT_TOKEN=你的BotToken
 TELEGRAM_CHAT_ID=你的ChatID
 ```
@@ -225,7 +225,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 # 使用 onchainos 钱包登录（Solana 链签名）
 onchainos wallet login
 
-# 可选（~/.cargo/bin/.env）
+# 可选（~/.plugin-store/.env）
 TELEGRAM_BOT_TOKEN=你的BotToken
 TELEGRAM_CHAT_ID=你的ChatID
 ```
@@ -237,7 +237,7 @@ TELEGRAM_CHAT_ID=你的ChatID
 # 使用 onchainos 钱包登录（Solana 链签名）
 onchainos wallet login
 
-# 可选（~/.cargo/bin/.env）
+# 可选（~/.plugin-store/.env）
 TELEGRAM_BOT_TOKEN=你的BotToken
 TELEGRAM_CHAT_ID=你的ChatID
 ```
@@ -1017,7 +1017,7 @@ If user hasn't set up keys, guide them:
 
 onchainos wallet login
 
-# 可选 — Telegram 通知（在 ~/.cargo/bin/.env 中）
+# 可选 — Telegram 通知（在 ~/.plugin-store/.env 中）
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```

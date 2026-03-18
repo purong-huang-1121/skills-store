@@ -160,12 +160,12 @@ Before starting the daemon, check:
 1. **onchainos wallet**: `onchainos wallet status` — must be logged in
 2. **Telegram notifications** (optional but recommended):
    ```bash
-   cat ~/.cargo/bin/.env
+   cat ~/.plugin-store/.env
    ```
    If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
-   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.cargo/bin/.env`"
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.plugin-store/.env`"
    >
-   > Ask the user if they want to configure it now. If yes, help them edit `~/.cargo/bin/.env`.
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.plugin-store/.env`.
 
 然后询问用户选择链（Base / Ethereum）。
 
@@ -217,7 +217,7 @@ Key points to verify:
    ```
    If not installed, follow: https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
 
-2. **Telegram notifications (optional)**: Configure in `~/.cargo/bin/.env`:
+2. **Telegram notifications (optional)**: Configure in `~/.plugin-store/.env`:
    ```
    TELEGRAM_BOT_TOKEN=your_bot_token
    TELEGRAM_CHAT_ID=your_chat_id
