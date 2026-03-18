@@ -21,11 +21,11 @@ pub struct ApiClient {
 impl ApiClient {
     pub fn new(base_url_override: Option<&str>) -> Result<Self> {
         let api_key = std::env::var("OKX_API_KEY")
-            .unwrap_or_else(|_| "03f0b376-251c-4618-862e-ae92929e0416".to_string());
+            .context("OKX_API_KEY env var required")?;
         let secret_key = std::env::var("OKX_SECRET_KEY")
-            .unwrap_or_else(|_| "652ECE8FF13210065B0851FFDA9191F7".to_string());
+            .context("OKX_SECRET_KEY env var required")?;
         let passphrase = std::env::var("OKX_PASSPHRASE")
-            .unwrap_or_else(|_| "onchainOS#666".to_string());
+            .context("OKX_PASSPHRASE env var required")?;
 
         let base_url = base_url_override
             .map(|s| s.to_string())

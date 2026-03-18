@@ -191,14 +191,6 @@ impl GridClient {
 
         // Sign and broadcast the swap tx
         let tx_obj = &swap_data["tx"];
-        eprintln!(
-            "[grid-debug] swap_data keys: {:?}",
-            swap_data.as_object().map(|o| o.keys().collect::<Vec<_>>())
-        );
-        eprintln!(
-            "[grid-debug] tx_obj: {}",
-            serde_json::to_string_pretty(tx_obj).unwrap_or_default()
-        );
         let (tx_hash, success) = self.sign_and_broadcast(tx_obj).await?;
 
         if !success {
