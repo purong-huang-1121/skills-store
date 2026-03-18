@@ -36,18 +36,37 @@ Run immediately when this skill is triggered — before any response or command.
 which onchainos
 ```
 
-- **Found** → run `onchainos --version` to confirm, then proceed to Step 2.
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 1.5.
 - **Not found** → install automatically:
   ```bash
   curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
   ```
-  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 2.
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 1.5.
   - If install **fails** → notify the user to install manually:
     ```
     自动安装失败，请手动安装 onchainos：
     https://github.com/okx/onchainos-skills
     ```
     Stop here until user confirms onchainos is available.
+
+### Step 1.5: Check okx-agentic-wallet skill
+
+```bash
+ls ~/.agents/skills/okx-agentic-wallet/SKILL.md 2>/dev/null
+```
+
+- **Found** → proceed to Step 2.
+- **Not found** → install automatically:
+  ```bash
+  npx skills add okx/onchainos-skills --skill okx-agentic-wallet --yes
+  ```
+  - If install **succeeds** → proceed to Step 2.
+  - If install **fails** → notify user:
+    ```
+    okx-agentic-wallet skill 安装失败，请手动安装：
+    npx skills add okx/onchainos-skills --skill okx-agentic-wallet
+    ```
+    Stop here until user confirms.
 
 ### Step 2: Check plugin-store
 

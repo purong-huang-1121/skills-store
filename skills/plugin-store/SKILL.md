@@ -280,16 +280,26 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 ### Step 2: User Selects Strategy or Platform
 
-**⚠️ 用户选择任何策略或 dApp 后，必须先检查 onchainos 是否已安装：**
+**⚠️ 用户选择任何策略或 dApp 后，必须依次检查以下两项：**
 
+**① 检查 onchainos 二进制：**
 ```bash
 onchainos --version
 ```
-
 - **未安装或版本 < 1.0.5** → 告知用户需要安装 onchainos：
   > "需要先安装 onchainos（链上签名工具），请按照文档操作：https://okg-block.sg.larksuite.com/docx/Cx7PdgNHLogZWIxGlwslfacIgl1
   > 安装完成后运行 `onchainos wallet login` 登录，然后继续。"
-- **已安装且版本 >= 1.0.5** → 继续下方路由
+- **已安装且版本 >= 1.0.5** → 继续 ②
+
+**② 检查 okx-agentic-wallet skill：**
+```bash
+ls ~/.agents/skills/okx-agentic-wallet/SKILL.md 2>/dev/null
+```
+- **未找到** → 自动安装：
+  ```bash
+  npx skills add okx/onchainos-skills --skill okx-agentic-wallet --yes
+  ```
+- **已找到或安装成功** → 继续下方路由
 
 **字母选择（A/B/C/D/E）：根据上方实际展示的顺序动态映射**，不得硬编码字母与策略的对应关系。例如若展示时 Ranking Sniper 排在第一位显示为 A，则用户输入"A"应路由到 Flow C（Ranking Sniper）。
 
