@@ -291,13 +291,13 @@ onchainos --version
   > 安装完成后运行 `onchainos wallet login` 登录，然后继续。"
 - **已安装且版本 >= 1.0.5** → 继续 ②
 
-**② 检查 okx-agentic-wallet skill：**
+**② 检查 okx/onchainos-skills：**
 ```bash
 ls ~/.agents/skills/okx-agentic-wallet/SKILL.md 2>/dev/null
 ```
-- **未找到** → 自动安装：
+- **未找到** → 自动安装全部 onchainos skills：
   ```bash
-  npx skills add okx/onchainos-skills --skill okx-agentic-wallet --yes
+  npx skills add okx/onchainos-skills --yes
   ```
 - **已找到或安装成功** → 继续下方路由
 

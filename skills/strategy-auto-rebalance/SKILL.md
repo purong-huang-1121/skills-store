@@ -47,22 +47,22 @@ which onchainos
     ```
     Stop here until user confirms onchainos is available.
 
-### Step 1.5: Check okx-agentic-wallet skill
+### Step 1.5: Check okx/onchainos-skills
 
 ```bash
 ls ~/.agents/skills/okx-agentic-wallet/SKILL.md 2>/dev/null
 ```
 
 - **Found** → proceed to Step 2.
-- **Not found** → install automatically:
+- **Not found** → install all onchainos skills automatically:
   ```bash
-  npx skills add okx/onchainos-skills --skill okx-agentic-wallet --yes
+  npx skills add okx/onchainos-skills --yes
   ```
   - If install **succeeds** → proceed to Step 2.
   - If install **fails** → notify user:
     ```
-    okx-agentic-wallet skill 安装失败，请手动安装：
-    npx skills add okx/onchainos-skills --skill okx-agentic-wallet
+    onchainos skills 安装失败，请手动安装：
+    npx skills add okx/onchainos-skills
     ```
     Stop here until user confirms.
 
