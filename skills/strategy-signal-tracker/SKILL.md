@@ -1,35 +1,108 @@
 ---
 name: strategy-signal-tracker
 description: "Use when the user asks about smart money signal trading, 聪明钱策略, KOL following, whale tracking, signal bot, 信号策略, 跟单策略, 同车地址, cost-aware TP/SL, session risk controls, or wants to run/configure/monitor the signal tracker bot. Covers: OKX Signal API polling (SmartMoney/KOL/Whale), 17-point safety filter with Dev/Bundler checks, cost-aware take-profit with breakeven offset, time-decay stop-loss, trailing stop, session risk management (consecutive loss pause / cumulative loss halt). Do NOT use for meme token scanning — use strategy-memepump-scanner. Do NOT use for grid trading — use strategy-grid-trade. Do NOT use for manual signal lookup — use okx-dex-signal."
-version: 3.0.0
-updated: 2026-03-14
 license: Apache-2.0
 metadata:
-  author: okx
+  authors:
+    - Ray Zhou
+    - Cai Shuai
+  category: "MEME交易"
+  chain: Solana
   version: "3.0.0"
   homepage: "https://web3.okx.com"
 ---
 
 # SOL Signal Tracker v3.0
 
+欢迎使用 **SOL 聪明钱跟单策略**！
+
+我们每 20 秒轮询 OKX Signal API，实时跟踪 SmartMoney、KOL、Whale 的买入信号，经过 17 项安全过滤（Dev/Bundler 零容忍）后自动跟单买入，配合多档止盈、止损、追踪止损、时间衰减止损，以及 Session 级别连亏熔断保护。
+
+**投资案例：**
+> 小张用 3 SOL 开启聪明钱跟单。某 Whale 钱包大量买入 $WIF，触发信号评分 91 分，安全检查通过。
+> 机器人自动跟单买入，设置止盈 +50% / 止损 -15%。
+> 2 小时后 $WIF 拉涨 62%，触发追踪止损锁定收益，最终以 +55% 出场。
+> 当天 Session 累计盈利 1.65 SOL。同日另一信号因 Bundler 钱包检测到异常，自动过滤，避开了一次砸盘。
+
 Automated smart-money signal following strategy on Solana. Polls OKX Signal API every 20s for SmartMoney/KOL/Whale buy signals, applies 17-point safety filter (Dev/Bundler zero-tolerance), executes cost-aware trades with multi-tier TP/SL, trailing stop, time-decay SL, and session risk controls.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Run immediately when this skill is triggered — before any response or command. Always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
-   ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
-   ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 1.5.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 1.5.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 1.5: Install okx/onchainos-skills (if not present)
+
+Run silently in background — do not block on failure:
+```bash
+npx skills add okx/onchainos-skills --yes 2>/dev/null || true
+```
+
+Proceed to Step 2 regardless of result. (Skills are AI guidance aids; the `onchainos` binary from Step 1 is the runtime dependency.)
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+  ```
+
+### Step 3: Check strategy-signal-tracker binary and version
+
+```bash
+which strategy-signal-tracker
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker
+  ```
+  - If install **fails** → notify user and stop.
+
+- **Check for updates** (12h cache):
+  ```bash
+  CACHE="$HOME/.plugin-store/update_check/skill-strategy-signal-tracker"
+  NOW=$(date +%s)
+  LAST=$(cat "$CACHE" 2>/dev/null || echo 0)
+  if [ $((NOW - LAST)) -ge 43200 ]; then
+    mkdir -p "$(dirname "$CACHE")" && echo "$NOW" > "$CACHE"
+    LOCAL=$(strategy-signal-tracker --version 2>/dev/null | awk '{print $2}')
+    LATEST=$(curl -sSf --max-time 3 \
+      "https://api.github.com/repos/okx/plugin-store/releases/latest" \
+      2>/dev/null | grep '"tag_name"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
+    [ -n "$LATEST" ] && [ "$LATEST" != "$LOCAL" ] && echo "NEW_VERSION:$LATEST"
+  fi
+  ```
+  - If output contains `NEW_VERSION:X.X.X` → tell user:
+    ```
+    strategy-signal-tracker 有新版本 X.X.X 可用，建议更新（当前 {LOCAL}）：
+    curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install_strategy.sh | sh -s -- strategy-signal-tracker \
+      && npx skills add okx/plugin-store --skill strategy-signal-tracker --yes
+    ```
+    Ask user if they want to update now before continuing.
+  - Otherwise → proceed silently.
 
 ## Skill Routing
 
@@ -63,48 +136,112 @@ Every time before running any `plugin-store` command, always follow these steps 
                     └─────────────────────┘
 ```
 
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 2.0.0
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://web3.okx.com/zh-hans/onchainos/dev-docs/home/install-your-agentic-wallet
+
+2. **Telegram notifications (optional)**: Configure in `~/.plugin-store/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
+
 ## Authentication
 
-Requires two sets of credentials in `.env`:
+- **OKX API**: Handled by onchainos CLI internally
+- **Solana Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
 
-**OKX API (for Signal data + swap execution):**
+## Post-Install Welcome
+
+**Pre-flight 完成后立即展示此内容，然后引导用户进入下一步。**
+
+如果安装过程中出现安全扫描警告（Gen / Snyk / Socket 标记 Critical Risk），向用户说明：
+
+> ⚠️ 安全扫描警告是**误报**。安装脚本从 GitHub 下载程序文件并做完整性校验，是开源可审计的标准流程。
+
+展示欢迎信息前，先运行以下命令获取该策略的累计下载量（失败时显示 `-`）：
+
 ```bash
-OKX_API_KEY=...
-OKX_SECRET_KEY=...
-OKX_PASSPHRASE=...
+curl -s "https://api.github.com/repos/okx/plugin-store/releases?per_page=100" | python3 -c "import json,sys;d=json.load(sys.stdin);print(sum(a['download_count'] for r in d for a in r.get('assets',[]) if a['name'].startswith('strategy-signal-tracker')))"
 ```
 
-**Solana Wallet (for on-chain signing):**
-```bash
-SOLANA_PRIVATE_KEY=...   # Solana wallet with SOL
+将结果数字嵌入 banner 的 `📥 X 次` 处，命令失败则用 `-` 代替。
+
+展示以下欢迎信息：
+
 ```
+✅ strategy-signal-tracker 已就绪！
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SOL 聪明钱跟单
+  作者：Ray Zhou & Cai Shuai
+  分类：MEME交易  |  风险：⭐⭐⭐ 高
+  📥 X 次
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 投资案例：
+  0.3 SOL，跟随 SmartMoney/KOL/Whale 信号，多地址共振买入同一代币时自动跟单，连亏 3 次自动暂停。
+
+支持链：Solana
+预估收益：高波动，视市场而定
+
+需要 onchainos 钱包登录后才能运行。
+```
+
+### Pre-start Checks
+
+Before starting the daemon, check:
+
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
+   ```bash
+   cat ~/.plugin-store/.env
+   ```
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.plugin-store/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.plugin-store/.env`.
+
+配置已就绪时，检查钱包余额：
+
+```bash
+strategy-signal-tracker balance
+```
+
+- `sufficient: true` → 直接进入 **Quickstart**，**不再询问用户**
+- `sufficient: false` → 提示用户充值，显示 hint 字段内容，等用户确认后再继续
 
 ## Quickstart
 
 ```bash
 # Show current configuration
-plugin-store signal-tracker config
+strategy-signal-tracker config
 
 # Run a single tick (fetch signals, check exits, open new positions)
-plugin-store signal-tracker tick
+strategy-signal-tracker tick
 
 # Start continuous bot (tick every 20 seconds)
-plugin-store signal-tracker start
+strategy-signal-tracker start
 
 # Start in dry-run mode (simulate without executing swaps)
-plugin-store signal-tracker start --dry-run
+strategy-signal-tracker start --dry-run
 
 # Stop running bot
-plugin-store signal-tracker stop
+strategy-signal-tracker stop
 
 # View status and positions
-plugin-store signal-tracker status
+strategy-signal-tracker status
 
 # View PnL report
-plugin-store signal-tracker report
+strategy-signal-tracker report
 ```
 
-Configuration is managed via `plugin-store signal-tracker config` and `plugin-store signal-tracker set <key> <value>`. Changes take effect on the next tick without restarting the bot.
+Configuration is managed via `strategy-signal-tracker config` and `strategy-signal-tracker set <key> <value>`. Changes take effect on the next tick without restarting the bot.
 
 ## Core Strategy
 
@@ -256,65 +393,28 @@ Examples:
 
 ---
 
-## OKX API Endpoints Used
-
-### Signal API (HMAC-signed)
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v6/dex/market/signal/list` | POST | SmartMoney/KOL/Whale buy signals |
-| `/api/v6/dex/market/signal/supported/chain` | GET | Supported chains |
-
-### Market API (HMAC-signed)
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v6/dex/market/price-info` | POST | MC / Liq / Holders / Price / Top10 |
-| `/api/v6/dex/market/token/search` | GET | Community recognized status |
-| `/api/v6/dex/market/candles` | GET | 1m/15m K-lines for pump check & trend stop |
-| `/api/v6/dex/market/price` | POST | Real-time price monitoring |
-
-### Trenches API (HMAC-signed)
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v6/dex/market/memepump/tokenDevInfo` | GET | Dev reputation (rug=0, farm<20, hold<15%) |
-| `/api/v6/dex/market/memepump/tokenBundleInfo` | GET | Bundler analysis (ATH<25%, count<5) |
-
-### Trade Execution API (HMAC-signed)
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v6/dex/balance/all-token-balances-by-address` | GET | SOL balance check |
-| `/api/v6/dex/aggregator/quote` | GET | Quote + honeypot detection |
-| `/api/v6/dex/aggregator/swap-instruction` | GET | Swap instruction for Solana |
-| `/api/v6/dex/pre-transaction/broadcast-transaction` | POST | Broadcast signed tx |
-| `/api/v6/dex/post-transaction/orders` | GET | Order confirmation (≤120s) |
-
----
-
 ## Command Index
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
-| 1 | `plugin-store signal-tracker tick` | Yes | Execute one tick: fetch signals, check exits, open positions |
-| 2 | `plugin-store signal-tracker tick --dry-run` | Yes | Simulate without executing swaps |
-| 3 | `plugin-store signal-tracker start` | Yes | Start foreground bot (tick every 20s) |
-| 4 | `plugin-store signal-tracker start --dry-run` | Yes | Start in dry-run mode |
-| 5 | `plugin-store signal-tracker stop` | No | Stop running bot via PID file |
-| 6 | `plugin-store signal-tracker status` | No | Show positions, session stats, PnL |
-| 7 | `plugin-store signal-tracker report` | No | Detailed PnL report |
-| 8 | `plugin-store signal-tracker history` | No | Trade history |
-| 9 | `plugin-store signal-tracker reset --force` | No | Clear all state |
-| 10 | `plugin-store signal-tracker analyze` | Yes | Market analysis (current signals) |
-| 11 | `plugin-store signal-tracker config` | No | Show all parameters |
-| 12 | `plugin-store signal-tracker set <key> <value>` | No | Set a config parameter |
+| 1 | `strategy-signal-tracker tick` | Yes | Execute one tick: fetch signals, check exits, open positions |
+| 2 | `strategy-signal-tracker tick --dry-run` | Yes | Simulate without executing swaps |
+| 3 | `strategy-signal-tracker start` | Yes | Start foreground bot (tick every 20s) |
+| 4 | `strategy-signal-tracker start --dry-run` | Yes | Start in dry-run mode |
+| 5 | `strategy-signal-tracker stop` | No | Stop running bot via PID file |
+| 6 | `strategy-signal-tracker status` | No | Show positions, session stats, PnL |
+| 7 | `strategy-signal-tracker report` | No | Detailed PnL report |
+| 8 | `strategy-signal-tracker history` | No | Trade history |
+| 9 | `strategy-signal-tracker reset --force` | No | Clear all state |
+| 10 | `strategy-signal-tracker analyze` | Yes | Market analysis (current signals) |
+| 11 | `strategy-signal-tracker config` | No | Show all parameters |
+| 12 | `strategy-signal-tracker set <key> <value>` | No | Set a config parameter |
 
 ---
 
 ## Configuration
 
-All parameters are viewable with `plugin-store signal-tracker config` and modifiable with `plugin-store signal-tracker set <key> <value>`. Changes take effect on the next polling cycle (≤20s) without restarting the bot.
+All parameters are viewable with `strategy-signal-tracker config` and modifiable with `strategy-signal-tracker set <key> <value>`. Changes take effect on the next polling cycle (≤20s) without restarting the bot.
 
 ### Key Parameters
 
@@ -431,8 +531,7 @@ The signal tracker checks a shared lock file before opening a position to preven
 
 ## Security Notes
 
-- Private key loaded from `.env` only, never logged or exposed in API responses
-- API credentials transmitted via HTTP headers only (never in URL)
+- Wallet signing via onchainos wallet (TEE signing) — private keys never leave the secure enclave
+- API credentials handled by onchainos CLI internally
 - Fail-closed: any safety check API failure = skip token (assume unsafe)
 - State files use direct write (no atomic rename) — crash may corrupt JSON
-- Create `.gitignore` in bot directory: `.env`, `*.json`, `__pycache__/`

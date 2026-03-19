@@ -150,14 +150,10 @@ fn polymarket_history_with_real_token() {
     );
 }
 
-// ─── trading commands (require EVM_PRIVATE_KEY) ──────────────
+// ─── trading commands (require onchainos wallet login) ──────────────
 
 #[test]
-fn polymarket_buy_missing_private_key_fails() {
-    if std::env::var("EVM_PRIVATE_KEY").is_ok() {
-        eprintln!("SKIP: EVM_PRIVATE_KEY is set");
-        return;
-    }
+fn polymarket_buy_missing_wallet_fails() {
     let output = plugin_store()
         .args([
             "polymarket",
@@ -174,13 +170,6 @@ fn polymarket_buy_missing_private_key_fails() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap_or_default();
     assert_eq!(json["ok"], serde_json::Value::Bool(false));
-    assert!(
-        json["error"]
-            .as_str()
-            .unwrap_or("")
-            .contains("EVM_PRIVATE_KEY"),
-        "expected error about missing private key: {json}"
-    );
 }
 
 #[test]
@@ -211,10 +200,7 @@ fn polymarket_cancel_missing_id_fails() {
 }
 
 #[test]
-fn polymarket_orders_missing_private_key_fails() {
-    if std::env::var("EVM_PRIVATE_KEY").is_ok() {
-        return;
-    }
+fn polymarket_orders_missing_wallet_fails() {
     let output = plugin_store()
         .args(["polymarket", "orders"])
         .output()
@@ -225,10 +211,7 @@ fn polymarket_orders_missing_private_key_fails() {
 }
 
 #[test]
-fn polymarket_balance_missing_private_key_fails() {
-    if std::env::var("EVM_PRIVATE_KEY").is_ok() {
-        return;
-    }
+fn polymarket_balance_missing_wallet_fails() {
     let output = plugin_store()
         .args(["polymarket", "balance"])
         .output()

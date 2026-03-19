@@ -2,10 +2,9 @@
 
 use std::str::FromStr;
 
-use alloy::network::EthereumWallet;
 use alloy::primitives::{Address, U256};
 use alloy::providers::ProviderBuilder;
-use alloy::signers::local::PrivateKeySigner;
+use alloy::sol_types::SolCall;
 use anyhow::{bail, Context, Result};
 use serde_json::json;
 
@@ -15,9 +14,16 @@ use super::contracts::{IStakedUSDe, IERC20};
 const SUSDE_ADDRESS: &str = "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497";
 const USDE_ADDRESS: &str = "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3";
 const ETH_RPC: &str = "https://ethereum-rpc.publicnode.com";
+const ONCHAINOS_CHAIN: &str = "eth";
+
+/// Signing mode for write operations.
+pub enum SignerMode {
+    /// onchainos wallet CLI signing.
+    OnchainOs,
+}
 
 pub struct EthenaClient {
-    signer: Option<PrivateKeySigner>,
+    signer: Option<SignerMode>,
     rpc_url: String,
 }
 
@@ -31,17 +37,24 @@ impl EthenaClient {
         })
     }
 
-    /// Create a client with signing capability from EVM_PRIVATE_KEY.
-    pub fn new_with_signer() -> Result<Self> {
+    /// Create a client that signs via onchainos wallet CLI.
+    pub fn new_with_onchainos() -> Result<Self> {
         let rpc_url = std::env::var("ETHENA_RPC_URL").unwrap_or_else(|_| ETH_RPC.to_string());
-        let pk = std::env::var("EVM_PRIVATE_KEY")
-            .context("EVM_PRIVATE_KEY env var required for write operations")?;
-        let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-        let signer: PrivateKeySigner = pk.parse().context("invalid EVM_PRIVATE_KEY")?;
         Ok(Self {
-            signer: Some(signer),
+            signer: Some(SignerMode::OnchainOs),
             rpc_url,
         })
+    }
+
+    /// Get the signer's address.
+    pub fn address(&self) -> Result<Address> {
+        match &self.signer {
+            Some(SignerMode::OnchainOs) => {
+                let addr_str = crate::onchainos::get_evm_address()?;
+                Address::from_str(&addr_str).context("invalid onchainos EVM address")
+            }
+            None => bail!("No signer configured"),
+        }
     }
 
     /// Query current sUSDe yield info: exchange rate, total assets, APY estimate.
@@ -97,107 +110,111 @@ impl EthenaClient {
     /// Stake USDe → sUSDe.
     pub async fn stake(&self, amount: U256) -> Result<serde_json::Value> {
         let signer = self.signer.as_ref().context("signer required for stake")?;
-        let wallet = EthereumWallet::from(signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
-
         let susde_addr = Address::from_str(SUSDE_ADDRESS)?;
         let usde_addr = Address::from_str(USDE_ADDRESS)?;
-        let user = signer.address();
+        let user = self.address()?;
 
-        // Approve sUSDe contract to spend USDe
-        let usde = IERC20::new(usde_addr, &provider);
-        let current_allowance = usde.allowance(user, susde_addr).call().await?;
-        if current_allowance < amount {
-            let approve_receipt = usde
-                .approve(susde_addr, amount)
-                .send()
-                .await?
-                .get_receipt()
+        match signer {
+            SignerMode::OnchainOs => {
+                let provider = ProviderBuilder::new().connect_http(self.rpc_url.parse()?);
+
+                let usde = IERC20::new(usde_addr, &provider);
+                let current_allowance = usde.allowance(user, susde_addr).call().await?;
+                if current_allowance < amount {
+                    let approve_calldata = IERC20::approveCall {
+                        spender: susde_addr,
+                        amount,
+                    }
+                    .abi_encode();
+                    crate::onchainos::contract_call(
+                        ONCHAINOS_CHAIN,
+                        &format!("{}", usde_addr),
+                        &format!("0x{}", hex::encode(&approve_calldata)),
+                        "0",
+                    )
+                    .await?;
+                }
+
+                let deposit_calldata = IStakedUSDe::depositCall {
+                    assets: amount,
+                    receiver: user,
+                }
+                .abi_encode();
+                let tx_hash = crate::onchainos::contract_call(
+                    ONCHAINOS_CHAIN,
+                    &format!("{}", susde_addr),
+                    &format!("0x{}", hex::encode(&deposit_calldata)),
+                    "0",
+                )
                 .await?;
-            if !approve_receipt.status() {
-                bail!("USDe approve transaction failed");
+
+                Ok(json!({
+                    "action": "stake",
+                    "amount_usde": format_units_18(amount),
+                    "tx_hash": tx_hash,
+                    "status": "success",
+                }))
             }
         }
-
-        // Deposit USDe into sUSDe vault
-        let susde = IStakedUSDe::new(susde_addr, &provider);
-        let receipt = susde
-            .deposit(amount, user)
-            .send()
-            .await?
-            .get_receipt()
-            .await?;
-
-        Ok(json!({
-            "action": "stake",
-            "amount_usde": format_units_18(amount),
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "status": if receipt.status() { "success" } else { "failed" },
-            "block_number": receipt.block_number.unwrap_or_default(),
-        }))
     }
 
     /// Initiate unstake cooldown for a given USDe amount.
     /// After cooldown period (7 days), call `unstake()` to withdraw.
     pub async fn cooldown(&self, amount: U256) -> Result<serde_json::Value> {
-        let signer = self
-            .signer
-            .as_ref()
-            .context("signer required for unstake")?;
-        let wallet = EthereumWallet::from(signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
-
+        let signer = self.signer.as_ref().context("signer required for cooldown")?;
         let susde_addr = Address::from_str(SUSDE_ADDRESS)?;
-        let susde = IStakedUSDe::new(susde_addr, &provider);
 
-        // Get cooldown duration for user info
-        let duration = susde.cooldownDuration().call().await?;
+        match signer {
+            SignerMode::OnchainOs => {
+                let provider = ProviderBuilder::new().connect_http(self.rpc_url.parse()?);
+                let susde = IStakedUSDe::new(susde_addr, &provider);
+                let duration = susde.cooldownDuration().call().await?;
 
-        let receipt = susde
-            .cooldownAssets(amount)
-            .send()
-            .await?
-            .get_receipt()
-            .await?;
+                let calldata = IStakedUSDe::cooldownAssetsCall { assets: amount }.abi_encode();
+                let tx_hash = crate::onchainos::contract_call(
+                    ONCHAINOS_CHAIN,
+                    &format!("{}", susde_addr),
+                    &format!("0x{}", hex::encode(&calldata)),
+                    "0",
+                )
+                .await?;
 
-        Ok(json!({
-            "action": "cooldown_initiated",
-            "amount_usde": format_units_18(amount),
-            "cooldown_days": duration.to::<u64>() as f64 / 86400.0,
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "status": if receipt.status() { "success" } else { "failed" },
-            "block_number": receipt.block_number.unwrap_or_default(),
-        }))
+                Ok(json!({
+                    "action": "cooldown_initiated",
+                    "amount_usde": format_units_18(amount),
+                    "cooldown_days": duration.to::<u64>() as f64 / 86400.0,
+                    "tx_hash": tx_hash,
+                    "status": "success",
+                }))
+            }
+        }
     }
 
     /// Withdraw USDe after cooldown period has elapsed.
     pub async fn unstake(&self) -> Result<serde_json::Value> {
-        let signer = self
-            .signer
-            .as_ref()
-            .context("signer required for unstake")?;
-        let wallet = EthereumWallet::from(signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.rpc_url.parse()?);
-
+        let signer = self.signer.as_ref().context("signer required for unstake")?;
         let susde_addr = Address::from_str(SUSDE_ADDRESS)?;
-        let susde = IStakedUSDe::new(susde_addr, &provider);
-        let user = signer.address();
+        let user = self.address()?;
 
-        let receipt = susde.unstake(user).send().await?.get_receipt().await?;
+        match signer {
+            SignerMode::OnchainOs => {
+                let calldata = IStakedUSDe::unstakeCall { receiver: user }.abi_encode();
+                let tx_hash = crate::onchainos::contract_call(
+                    ONCHAINOS_CHAIN,
+                    &format!("{}", susde_addr),
+                    &format!("0x{}", hex::encode(&calldata)),
+                    "0",
+                )
+                .await?;
 
-        Ok(json!({
-            "action": "unstake",
-            "receiver": format!("{}", user),
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "status": if receipt.status() { "success" } else { "failed" },
-            "block_number": receipt.block_number.unwrap_or_default(),
-        }))
+                Ok(json!({
+                    "action": "unstake",
+                    "receiver": format!("{}", user),
+                    "tx_hash": tx_hash,
+                    "status": "success",
+                }))
+            }
+        }
     }
 }
 

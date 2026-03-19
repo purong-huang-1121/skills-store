@@ -1,124 +1,133 @@
-# plugin-store Skills
+# plugin-store
 
-plugin-store skills for AI coding assistants. Provides token search, market data, wallet balance queries, swap execution, and transaction broadcasting across 20+ blockchains.
+链上 DeFi 智能体技能包，集成主流协议操作与自动化交易策略。支持 Claude Code、OpenClaw 等 AI 编程助手。
 
-## Available Skills
+Skills Store 收录了 Web3 Team 基于 Onchain OS 构建的上层策略 Skill，安装后可查看所有已上线的策略，选择你需要的策略安装并运行。
 
-| Skill | Description |
-|-------|-------------|
-| `okx-wallet-portfolio` | Wallet balance, token holdings, portfolio value |
-| `okx-dex-market` | Real-time prices, K-line charts, trade history, index prices, smart money signals, meme pump scanning |
-| `okx-dex-swap` | Token swap via DEX aggregation (500+ liquidity sources) |
-| `okx-dex-token` | Token search, metadata, market cap, rankings, holder analysis |
-| `okx-onchain-gateway` | Gas estimation, transaction simulation, broadcasting, order tracking |
-| `polymarket` | Prediction market search, pricing, orderbook, and trading (Polymarket) |
+- 策略使用过程中如有体验反馈，可联系策略作者交流
+- 如果你也想分享自己的策略，欢迎联系
 
-## Supported Chains
+## 包含技能
 
-XLayer, Solana, Ethereum, Base, BSC, Arbitrum, Polygon, and 20+ other chains.
+### 核心技能（dApp 协议集成）
 
-## Prerequisites
+`plugin-store` 是主入口技能，整合以下所有协议能力：
 
-All skills require OKX API credentials. Apply at [OKX Developer Portal](https://web3.okx.com/onchain-os/dev-portal).
+| 协议 | 功能 |
+|------|------|
+| **Aave V3** | 查看市场、账户信息、存款、取款、借款、还款 |
+| **Morpho Blue** | 市场列表、MetaMorpho 金库、存取款、持仓查询 |
+| **Uniswap V3** | 链上代币兑换、报价、Token 搜索 |
+| **Hyperliquid** | 永续合约/现货交易、资金费率、仓位管理 |
+| **Ethena** | sUSDe 质押/赎回、APY 查询、余额 |
+| **Polymarket** | 预测市场搜索、报价、买卖份额 |
+| **Kalshi** | 美国合规预测市场、活动/市场浏览、交易 |
+| **dapp-composer** | 跨协议组合操作、多步骤 DeFi 工作流 |
 
-Recommended: create a `.env` file in your project root:
+### 自动化策略技能
 
-```bash
-OKX_API_KEY="your-api-key"
-OKX_SECRET_KEY="your-secret-key"
-OKX_PASSPHRASE="your-passphrase"
-```
+| 技能 | 子命令 | 描述 |
+|------|--------|------|
+| `strategy-auto-rebalance` | `auto-rebalance` | USDC 跨协议（Aave/Compound/Morpho）自动调仓，Base/Ethereum |
+| `strategy-grid-trade` | `grid` | ETH/USDC 网格交易机器人，Base 链 |
+| `strategy-ranking-sniper` | `ranking-sniper` | SOL 排行榜狙击策略，3 层安全过滤 + 6 层出场体系 |
+| `strategy-signal-tracker` | `signal-tracker` | 聪明钱/KOL/巨鲸信号跟单，17 点安全过滤 |
+| `strategy-memepump-scanner` | `scanner` | Pump.fun 迁移代币自动扫描交易，3 信号动量检测 |
 
-**Security warning**: Never commit `.env` to git (add it to `.gitignore`) and never expose credentials in logs, screenshots, or chat messages.
+## 安装指南
 
-### Quick Start — Try It Now
+### 前提条件
 
-Want to try the skills right away? Use the shared API key below:
+首先安装 Agentic Wallet，参考 [Agentic Wallet 内测参与流程](https://web3.okx.com/zh-hans/onchainos/dev-docs/home/install-your-agentic-wallet)。
 
-```bash
-OKX_API_KEY="03f0b376-251c-4618-862e-ae92929e0416"
-OKX_SECRET_KEY="652ECE8FF13210065B0851FFDA9191F7"
-OKX_PASSPHRASE="onchainOS#666"
-```
+### 方式一：使用 Claude Code CLI 安装（推荐）
 
-## Installation
-
-### Recommended
-
-```bash
-npx skills add okx/plugin-store-skills
-```
-
-Works with Claude Code, Cursor, Codex CLI, and OpenCode. Auto-detects your environment and installs accordingly.
-
-### Claude Code
+复制以下命令在终端中运行，安装过程中可选配置 Telegram 机器人 Token 和 Chat ID 以接收通知：
 
 ```bash
-# Run in Claude Code
-/plugin marketplace add okx/plugin-store-skills
-/plugin install plugin-store-skills
+curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/reinstall.sh -o /tmp/reinstall.sh && sh /tmp/reinstall.sh
 ```
 
-### Codex CLI
-
-Tell Codex:
-
-```plain
-Fetch and follow instructions from https://raw.githubusercontent.com/okx/plugin-store-skills/refs/heads/main/.codex/INSTALL.md
-```
-
-### OpenCode
-
-Tell OpenCode:
-
-```plain
-Fetch and follow instructions from https://raw.githubusercontent.com/okx/plugin-store-skills/refs/heads/main/.opencode/INSTALL.md
-```
-
-## Skill Workflows
-
-The skills work together in typical DeFi flows:
-
-**Search and Buy**: `okx-dex-token` (find token) -> `okx-wallet-portfolio` (check funds) -> `okx-dex-swap` (execute trade)
-
-**Portfolio Overview**: `okx-wallet-portfolio` (holdings) -> `okx-dex-token` (enrich with analytics) -> `okx-dex-market` (price charts)
-
-**Market Research**: `okx-dex-token` (trending/rankings) -> `okx-dex-market` (candles/history) -> `okx-dex-swap` (trade)
-
-**Swap and Broadcast**: `okx-dex-swap` (get tx data) -> sign locally -> `okx-onchain-gateway` (broadcast) -> `okx-onchain-gateway` (track order)
-
-**Pre-flight Check**: `okx-onchain-gateway` (estimate gas) -> `okx-onchain-gateway` (simulate tx) -> `okx-onchain-gateway` (broadcast) -> `okx-onchain-gateway` (track order)
-
-**Full Trading Flow**: `okx-dex-token` (search) -> `okx-dex-market` (price/chart) -> `okx-wallet-portfolio` (check balance) -> `okx-dex-swap` (get tx) -> `okx-onchain-gateway` (simulate + broadcast + track)
-
-**Prediction Market Trading**: `polymarket` (search market) -> `polymarket` (check price) -> `polymarket` (buy shares)
-
-## Install CLI
-
-### Shell Script (macOS / Linux)
-
-Auto-detects your platform, downloads the matching binary, verifies SHA256 checksum, and installs to `/usr/local/bin`:
+安装完成后，在终端中运行 Claude（跳过权限检查）：
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/okx/plugin-store-skills/main/install.sh | sh
+claude --dangerously-skip-permissions
 ```
 
-## API Key Security Notice & Disclaimer
+> 如不想跳过权限检查，直接输入 `claude` 即可。
 
-**Built-in Sandbox API Keys (Default)** This integration includes built-in sandbox API keys for testing purposes only. By using these keys, you acknowledge and accept the following:
+启动后可用自然语言询问已安装的技能，例如"你有什么技能？"，然后选择你需要的策略运行。
 
-* These keys are shared and may be subject to rate limiting, quota exhaustion, or unexpected behavior at any time without prior notice.
-* Any Agent execution errors, failures, financial losses, or data inaccuracies arising from the use of built-in keys are solely your responsibility.
-* We expressly disclaim all liability for any direct, indirect, incidental, or consequential damages resulting from the use of built-in sandbox keys in production or quasi-production environments.
-* Built-in keys are strictly intended for local testing and evaluation only. Do not use them in production environments or with real assets.
+### 方式二：使用 OpenClaw 安装
 
-**Production Usage (Recommended)** For stable and reliable production usage, you must provide your own API credentials by setting the following environment variables:
+直接将以下命令发送给 Agent，它会自动完成安装：
 
-* `OKX_API_KEY`
-* `OKX_SECRET_KEY`
-* `OKX_PASSPHRASE`
+```bash
+curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/reinstall.sh -o /tmp/reinstall.sh && sh /tmp/reinstall.sh
+```
 
-You are solely responsible for the security, confidentiality, and proper management of your own API keys. We shall not be liable for any unauthorized access, asset loss, or damages resulting from improper key management on your part.
+### 方式三：npx 安装
+
+```bash
+npx skills add plugin-store
+```
+
+支持 Claude Code、OpenClaw、Cursor、Codex CLI 等环境，自动检测安装路径。
+
+### 方式四：Shell 脚本安装 CLI（macOS / Linux）
+
+```bash
+curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+```
+
+自动检测平台，下载对应二进制，验证 SHA256，安装至 `~/.local/bin/plugin-store`。
+
+## 配置
+
+### 钱包授权（SOL/EVM 策略必须）
+
+使用 onchainos 钱包登录（支持 EVM 和 Solana 链签名）：
+
+```bash
+onchainos wallet login
+```
+
+### Telegram 通知（可选）
+
+```env
+TELEGRAM_BOT_TOKEN="your-bot-token"
+TELEGRAM_CHAT_ID="your-chat-id"
+```
+
+> **Q: 如何配置 Telegram Bot？**
+> A: 需要在环境变量中配置 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID`，如何获取可以直接问 Agent。
+
+## 支持链
+
+Solana、Ethereum、Base、BSC、Arbitrum、Polygon、XLayer 及 20+ 其他链。
+
+## 使用示例
+
+**查询 Aave 市场利率**
+> "查一下 Aave 上 USDC 的供款利率"
+
+**开启排行榜狙击策略**
+> "帮我启动 SOL 排行榜狙击"
+
+**查看策略钱包余额**
+> `plugin-store ranking-sniper balance`
+
+**网格交易**
+> "帮我在 Base 上开一个 ETH/USDC 网格策略"
+
+**聪明钱跟单**
+> "帮我启动聪明钱信号跟单策略"
+
+## 免责声明
+
+- 内置公共 API Key 仅供测试评估，可能随时限速或不可用，由此产生的任何损失概不负责
+- 自动化交易策略涉及真实资产，请充分了解风险后使用
+- 生产环境请务必使用自己的 API Key 和钱包私钥，并妥善保管
 
 ## License
 

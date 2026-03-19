@@ -17,24 +17,33 @@ use crate::strategy::ranking_sniper::state::SniperState;
 pub enum RankingSniperCommand {
     /// Execute one tick: fetch ranking, check exits, scan new entries
     Tick {
-        /// SOL budget (default: 0.5)
-        #[arg(long, default_value = "0.5")]
-        budget: f64,
-        /// SOL per trade (default: 0.05)
-        #[arg(long, default_value = "0.05")]
-        per_trade: f64,
+        /// SOL budget (overrides config)
+        #[arg(long)]
+        budget: Option<f64>,
+        /// SOL per trade (overrides config)
+        #[arg(long)]
+        per_trade: Option<f64>,
         /// Simulate without executing swaps
         #[arg(long)]
         dry_run: bool,
+        /// Max market cap filter (overrides config)
+        #[arg(long)]
+        max_market_cap: Option<f64>,
+        /// Min change % filter (overrides config)
+        #[arg(long)]
+        min_change: Option<f64>,
+        /// Min holders filter (overrides config)
+        #[arg(long)]
+        min_holders: Option<i64>,
     },
     /// Start the bot in foreground (tick every 10 seconds)
     Start {
-        /// SOL budget
-        #[arg(long, default_value = "0.5")]
-        budget: f64,
-        /// SOL per trade
-        #[arg(long, default_value = "0.05")]
-        per_trade: f64,
+        /// SOL budget (overrides config)
+        #[arg(long)]
+        budget: Option<f64>,
+        /// SOL per trade (overrides config)
+        #[arg(long)]
+        per_trade: Option<f64>,
         /// Simulate without executing swaps
         #[arg(long)]
         dry_run: bool,
@@ -59,14 +68,8 @@ pub enum RankingSniperCommand {
     },
     /// Market analysis (current ranking, top tokens)
     Analyze,
-    /// Test buy+sell round-trip for a token (dev/debug only)
-    TestTrade {
-        /// Token contract address
-        token: String,
-        /// SOL amount to buy (default: 0.01)
-        #[arg(long, default_value = "0.01")]
-        amount: f64,
-    },
+    /// Show wallet SOL balance
+    Balance,
     /// Show all configurable parameters and their current values
     Config,
     /// Force-sell all open positions immediately
@@ -87,22 +90,34 @@ pub async fn execute(cmd: RankingSniperCommand) -> Result<()> {
             budget,
             per_trade,
             dry_run,
+            max_market_cap,
+            min_change,
+            min_holders,
         } => {
             let notifier = make_notifier();
-            cmd_tick(budget, per_trade, dry_run, &notifier).await
+            let mut cfg = SniperConfig::load()?;
+            if let Some(v) = budget { cfg.budget_sol = v; }
+            if let Some(v) = per_trade { cfg.per_trade_sol = v; }
+            if let Some(v) = max_market_cap { cfg.max_market_cap = v; }
+            if let Some(v) = min_change { cfg.min_change_pct = v; }
+            if let Some(v) = min_holders { cfg.min_holders = v; }
+            cmd_tick_with_config(cfg, dry_run, &notifier).await
         }
         RankingSniperCommand::Start {
             budget,
             per_trade,
             dry_run,
-        } => cmd_start(budget, per_trade, dry_run).await,
+        } => {
+            let cfg = SniperConfig::load()?;
+            cmd_start(budget.unwrap_or(cfg.budget_sol), per_trade.unwrap_or(cfg.per_trade_sol), dry_run).await
+        }
         RankingSniperCommand::Stop => cmd_stop().await,
         RankingSniperCommand::Status => cmd_status().await,
         RankingSniperCommand::Report => cmd_report().await,
         RankingSniperCommand::History { limit } => cmd_history(limit).await,
         RankingSniperCommand::Reset { force } => cmd_reset(force).await,
         RankingSniperCommand::Analyze => cmd_analyze().await,
-        RankingSniperCommand::TestTrade { token, amount } => cmd_test_trade(&token, amount).await,
+        RankingSniperCommand::Balance => cmd_balance().await,
         RankingSniperCommand::Config => cmd_config().await,
         RankingSniperCommand::SellAll => cmd_sell_all().await,
         RankingSniperCommand::Sell { token, amount } => cmd_sell(&token, &amount).await,
@@ -119,6 +134,26 @@ fn make_notifier() -> Notifier {
         .telegram_chat_id
         .or_else(|| std::env::var("TELEGRAM_CHAT_ID").ok());
     Notifier::new(token, chat_id, "\u{1f3af} Ranking Sniper")
+}
+
+// ── balance ───────────────────────────────────────────────────────────
+
+async fn cmd_balance() -> Result<()> {
+    let client = SniperClient::new_read_only()?;
+    let wallet = crate::onchainos::get_sol_address().unwrap_or_default();
+    let sol = client.fetch_sol_balance().await?;
+    let hint = if sol < 0.1 {
+        format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
+    } else {
+        format!("{:.4} SOL 可用", sol)
+    };
+    output::success(serde_json::json!({
+        "wallet": wallet,
+        "sol_balance": sol,
+        "sufficient": sol >= 0.1,
+        "hint": hint,
+    }));
+    Ok(())
 }
 
 // ── config ────────────────────────────────────────────────────────────
@@ -230,15 +265,22 @@ fn ensure_config_file() -> Result<SniperConfig> {
 // ── tick ──────────────────────────────────────────────────────────────
 
 async fn cmd_tick(budget: f64, per_trade: f64, dry_run: bool, notifier: &Notifier) -> Result<()> {
-    let cfg = SniperConfig::load()?;
+    let mut cfg = SniperConfig::load()?;
+    cfg.budget_sol = budget;
+    cfg.per_trade_sol = per_trade;
+    cmd_tick_with_config(cfg, dry_run, notifier).await
+}
+
+async fn cmd_tick_with_config(cfg: SniperConfig, dry_run: bool, notifier: &Notifier) -> Result<()> {
+    let budget = cfg.budget_sol;
+    let per_trade = cfg.per_trade_sol;
     let mut state = SniperState::load()?;
 
-    // Update config from CLI args
     state.config.budget_sol = budget;
     state.config.per_trade_sol = per_trade;
     state.config.dry_run = dry_run;
     if state.remaining_budget_sol <= 0.0 {
-        state.remaining_budget_sol = budget;
+        state.remaining_budget_sol = cfg.budget_sol;
     }
     state.maybe_reset_daily();
 
@@ -961,62 +1003,6 @@ async fn cmd_analyze() -> Result<()> {
         "top_tokens": tokens,
         "known_tokens_count": state.known_tokens.len(),
         "active_positions": state.positions.len(),
-    }));
-    Ok(())
-}
-
-// ── test-trade ───────────────────────────────────────────────────────
-
-async fn cmd_test_trade(token_addr: &str, amount_sol: f64) -> Result<()> {
-    let client = SniperClient::new()?;
-
-    // Step 1: Get price before buy
-    let price_before = client.fetch_price(token_addr).await?;
-    eprintln!(
-        "[test-trade] Token price: ${:.10} | Buying {amount_sol} SOL worth...",
-        price_before
-    );
-
-    // Step 2: Buy
-    let buy_result = client.buy_token(token_addr, amount_sol).await?;
-    let buy_tx = buy_result.tx_hash.clone().unwrap_or_default();
-    eprintln!(
-        "[test-trade] BUY tx: {} | amount_out: {}",
-        buy_tx, buy_result.amount_out
-    );
-
-    // Step 3: Small delay to let tx settle
-    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-
-    // Step 4: Sell all back
-    let sell_amount = if buy_result.amount_out > 0.0 {
-        format!("{}", buy_result.amount_out as u64)
-    } else {
-        "0".to_string() // let API figure out max
-    };
-    eprintln!("[test-trade] Waiting 5s for token to settle...");
-    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-    eprintln!("[test-trade] Selling back (amount_raw: {sell_amount})...");
-    let sell_result = client.sell_token(token_addr, &sell_amount).await?;
-    let sell_tx = sell_result.tx_hash.clone().unwrap_or_default();
-
-    // Step 5: Get price after
-    let price_after = client.fetch_price(token_addr).await.unwrap_or(0.0);
-
-    output::success(json!({
-        "token": token_addr,
-        "amount_sol": amount_sol,
-        "buy": {
-            "tx_hash": buy_tx,
-            "price": price_before,
-            "amount_out": buy_result.amount_out,
-        },
-        "sell": {
-            "tx_hash": sell_tx,
-            "amount_out": sell_result.amount_out,
-        },
-        "price_before": price_before,
-        "price_after": price_after,
     }));
     Ok(())
 }

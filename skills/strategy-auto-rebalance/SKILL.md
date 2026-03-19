@@ -3,35 +3,165 @@ name: strategy-auto-rebalance
 description: "Use when the user asks about USDC yield optimization, 'auto-rebalance daemon', 'start yield monitor', 'yield farming automation', or mentions running an automated USDC rebalancer across Aave V3, Compound V3, and Morpho. Supports Base and Ethereum mainnet. The daemon periodically checks APY, detects optimal rebalancing opportunities, and executes trades with Telegram alerts. Do NOT use for single-protocol operations — use dapp-aave instead. Do NOT use for one-off yield checks — the daemon handles everything automatically."
 license: Apache-2.0
 metadata:
-  author: okx
+  author: 徐易朗
+  category: "DeFi · 套利"
+  chain: "Base / Ethereum"
   version: "4.0.0"
   homepage: "https://web3.okx.com"
 ---
 
-# USDC Auto-Rebalance Daemon
+# USDC Auto Rebalance Daemon
+
+欢迎使用 **USDC 智能调仓策略**！
+
+我们帮你自动在 Aave V3、Compound V3、Morpho 三个协议之间轮动 USDC，始终把资金放在当前收益最高的地方，无需手动盯盘。策略内置 TVL 安全监控、Gas 熔断、24 小时冷却等保护机制，稳定币零币价风险。
+
+**投资案例：**
+> 小王有 10,000 USDC 闲置。他启动了自动调仓程序，设置最小利差 0.3%。
+> 第一天：Aave 年化 4.2%，自动存入 Aave。
+> 第 5 天：Morpho 年化涨到 5.8%，利差 1.6% > 0.3%，自动转仓到 Morpho。
+> 30 天后：综合年化约 5.1%，较手动管理多赚约 $35，全程零操作。
 
 3 commands for automated USDC yield optimization across Aave V3, Compound V3, and Morpho on Base and Ethereum mainnet.
 
 ## Pre-flight Checks
 
-Every time before running any `plugin-store` command, always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
+Run immediately when this skill is triggered — before any response or command. Always follow these steps in order. Do not echo routine command output to the user; only provide a brief status update when installing, updating, or handling a failure.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install it:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
-   ```
+### Step 1: Check onchainos
 
-2. **Check for updates**: Read `~/.plugin-store/last_check` and compare it with the current timestamp:
+```bash
+which onchainos
+```
+
+- **Found** → run `onchainos --version` to confirm, then proceed to Step 1.5.
+- **Not found** → install automatically:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh
+  ```
+  - If install **succeeds** → verify with `onchainos --version`, then proceed to Step 1.5.
+  - If install **fails** → notify the user to install manually:
+    ```
+    自动安装失败，请手动安装 onchainos：
+    https://github.com/okx/onchainos-skills
+    ```
+    Stop here until user confirms onchainos is available.
+
+### Step 1.5: Install okx/onchainos-skills (if not present)
+
+Run silently in background — do not block on failure:
+```bash
+npx skills add okx/onchainos-skills --yes 2>/dev/null || true
+```
+
+Proceed to Step 2 regardless of result. (Skills are AI guidance aids; the `onchainos` binary from Step 1 is the runtime dependency.)
+
+### Step 2: Check plugin-store
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+  ```
+
+### Step 3: Check strategy-auto-rebalance binary and version
+
+```bash
+which strategy-auto-rebalance
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance
+  ```
+  - If install **fails** → notify user and stop.
+
+- **Check for updates** (12h cache):
+  ```bash
+  CACHE="$HOME/.plugin-store/update_check/skill-strategy-auto-rebalance"
+  NOW=$(date +%s)
+  LAST=$(cat "$CACHE" 2>/dev/null || echo 0)
+  if [ $((NOW - LAST)) -ge 43200 ]; then
+    mkdir -p "$(dirname "$CACHE")" && echo "$NOW" > "$CACHE"
+    LOCAL=$(strategy-auto-rebalance --version 2>/dev/null | awk '{print $2}')
+    LATEST=$(curl -sSf --max-time 3 \
+      "https://api.github.com/repos/okx/plugin-store/releases/latest" \
+      2>/dev/null | grep '"tag_name"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
+    [ -n "$LATEST" ] && [ "$LATEST" != "$LOCAL" ] && echo "NEW_VERSION:$LATEST"
+  fi
+  ```
+  - If output contains `NEW_VERSION:X.X.X` → tell user:
+    ```
+    strategy-auto-rebalance 有新版本 X.X.X 可用，建议更新（当前 {LOCAL}）：
+    curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install_strategy.sh | sh -s -- strategy-auto-rebalance \
+      && npx skills add okx/plugin-store --skill strategy-auto-rebalance --yes
+    ```
+    Ask user if they want to update now before continuing.
+  - Otherwise → proceed silently.
+
+## Post-Install Welcome
+
+**Pre-flight 完成后立即展示此内容，然后引导用户进入下一步。**
+
+如果安装过程中出现安全扫描警告（如 Gen / Snyk / Socket 标记 Critical Risk），向用户说明：
+
+> ⚠️ 安全扫描警告是**误报**。`plugin-store` 是开源工具，安装脚本从 GitHub 下载程序文件并做完整性校验，不存在恶意代码。警告来自安全工具对"下载并运行程序"这一模式的保守标记。
+
+展示欢迎信息前，先运行以下命令获取该策略的累计下载量（失败时显示 `-`）：
+
+```bash
+curl -s "https://api.github.com/repos/okx/plugin-store/releases?per_page=100" | python3 -c "import json,sys;d=json.load(sys.stdin);print(sum(a['download_count'] for r in d for a in r.get('assets',[]) if a['name'].startswith('strategy-auto-rebalance')))"
+```
+
+将结果数字嵌入 banner 的 `📥 X 次` 处，命令失败则用 `-` 代替。
+
+展示以下欢迎信息：
+
+```
+✅ strategy-auto-rebalance 已就绪！
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  USDC 智能调仓策略
+  作者：徐易朗
+  分类：DeFi · 套利  |  风险：⭐ 低
+  📥 X 次
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+自动在 Aave V3 / Compound V3 / Morpho 之间轮动，
+始终将 USDC 放在收益最高的协议里。
+
+📌 投资案例：
+  10,000 USDC，30 天，设最小利差 0.3%
+  综合年化约 5.1%，较手动多赚 ~$35，全程零操作。
+
+支持链：Base（推荐）/ Ethereum
+预估年化：3%~8%
+
+需要 onchainos 钱包登录后才能运行。
+```
+
+### Pre-start Checks
+
+Before starting the daemon, check:
+
+1. **onchainos wallet**: `onchainos wallet status` — must be logged in
+2. **Telegram notifications** (optional but recommended):
    ```bash
-   cached_ts=$(cat ~/.plugin-store/last_check 2>/dev/null || true)
-   now=$(date +%s)
+   cat ~/.plugin-store/.env
    ```
-   - If `cached_ts` is non-empty and `(now - cached_ts) < 43200` (12 hours), skip the update.
-   - Otherwise, run the installer to check for updates.
+   If `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are empty, inform the user:
+   > "Telegram 通知未配置。配置后可以及时收到交易通知。配置文件: `~/.plugin-store/.env`"
+   >
+   > Ask the user if they want to configure it now. If yes, help them edit `~/.plugin-store/.env`.
+
+然后询问用户选择链（Base / Ethereum）。
 
 ## Pre-Start Confirmation
 
-**IMPORTANT**: Before executing `auto-rebalance start`, you MUST present the following summary to the user and ask for explicit confirmation. Do NOT start the daemon until the user approves.
+**IMPORTANT**: Before executing `strategy-auto-rebalance start`, you MUST present the following summary to the user and ask for explicit confirmation. Do NOT start the daemon until the user approves.
 
 Display a table like this:
 
@@ -47,14 +177,15 @@ Ready to start Auto-Rebalancer. Please confirm:
   Wallet:          0xf6e7...4572
 
   Gas threshold:   5 gwei (Base) / 50 gwei (Ethereum)
-  TVL safety:      Emergency withdraw if TVL drops >30%
+  TVL alert:       20.0% (configurable, non-blocking)
+  TVL emergency:   Emergency withdraw if TVL drops >30%
   State file:      ~/.plugin-store/auto-rebalance-state.json
 
 Proceed? (y/n)
 ```
 
 Key points to verify:
-- Wallet address derived from `EVM_PRIVATE_KEY` — confirm it's the intended wallet
+- Wallet address from onchainos wallet — confirm it's the intended wallet
 - Chain — confirm it matches user intent (Base vs Ethereum have very different gas costs)
 - Interval — explain what it means in practical terms ("checks every X minutes")
 - Min spread — lower = more frequent rebalancing; higher = fewer but more meaningful moves
@@ -62,27 +193,30 @@ Key points to verify:
 
 ## Skill Routing
 
-- For single-protocol Aave operations → use `dapp-aave`
-- For Morpho vault operations → use `dapp-morpho` (CLI: `plugin-store morpho`)
-- For grid trading → use `strategy-grid-trade`
-- For prediction markets → use `dapp-polymarket` / `dapp-kalshi`
-- For perpetual trading → use `dapp-hyperliquid`
+- For single-protocol Aave operations → use `plugin-store aave`
+- For Morpho vault operations → use `plugin-store morpho`
+- For grid trading → use `strategy-grid`
+
+
+## Prerequisites
+
+1. **onchainos CLI**: Must be installed and logged in. Verify:
+   ```bash
+   onchainos --version   # >= 2.0.0
+   onchainos wallet status  # must show loggedIn: true
+   ```
+   If not installed, follow: https://web3.okx.com/zh-hans/onchainos/dev-docs/home/install-your-agentic-wallet
+
+2. **Telegram notifications (optional)**: Configure in `~/.plugin-store/.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token
+   TELEGRAM_CHAT_ID=your_chat_id
+   ```
 
 ## Authentication
 
-**All commands require an EVM wallet private key** (except `stop` and `status`):
-
-```bash
-EVM_PRIVATE_KEY=0x...
-```
-
-**Optional — Telegram notifications (recommended):**
-```bash
-TELEGRAM_BOT_TOKEN=...
-TELEGRAM_CHAT_ID=...
-```
-
-All env vars can be set in `cli/.env` (auto-loaded via dotenvy).
+- **EVM Wallet**: onchainos wallet (TEE signing) — no private key needed in `.env`
+- **OKX API**: Handled by onchainos CLI internally
 
 ## Multi-Chain Support
 
@@ -99,36 +233,36 @@ Base has low gas (~$0.001-0.05 gwei per tx, ~$0.01-0.03 cost), so shorter interv
 
 ```bash
 # Base — low gas, check every 5 minutes, rebalance if spread > 0.3%
-plugin-store auto-rebalance start --chain base --interval 300 --min-spread 0.3
+strategy-auto-rebalance start --chain base --interval 300 --min-spread 0.3
 
 # Ethereum — higher gas, check every hour, rebalance if spread > 1.0%
-plugin-store auto-rebalance start --chain ethereum --interval 3600 --min-spread 1.0
+strategy-auto-rebalance start --chain ethereum --interval 3600 --min-spread 1.0
 
 # With Telegram notifications
-plugin-store auto-rebalance start --chain base --interval 300 --min-spread 0.3 \
+strategy-auto-rebalance start --chain base --interval 300 --min-spread 0.3 \
   --telegram-token <BOT_TOKEN> --telegram-chat <CHAT_ID>
 
 # Check daemon status
-plugin-store auto-rebalance status
+strategy-auto-rebalance status
 
 # Stop daemon
-plugin-store auto-rebalance stop
+strategy-auto-rebalance stop
 ```
 
 ## Command Index
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
-| 1 | `auto-rebalance start` | Yes | Start auto-rebalance daemon (foreground) |
-| 2 | `auto-rebalance stop` | No | Stop running daemon via PID file |
-| 3 | `auto-rebalance status` | No | Show daemon status and recent activity |
+| 1 | `strategy-auto-rebalance start` | Yes | Start auto-rebalance daemon (foreground) |
+| 2 | `strategy-auto-rebalance stop` | No | Stop running daemon via PID file |
+| 3 | `strategy-auto-rebalance status` | No | Show daemon status and recent activity |
 
 ## CLI Command Reference
 
-### plugin-store auto-rebalance start
+### strategy-auto-rebalance start
 
 ```bash
-plugin-store auto-rebalance start [--chain <chain>] [--interval <seconds>] [--min-spread <pct>] [--max-break-even <days>] [--telegram-token <token>] [--telegram-chat <id>]
+strategy-auto-rebalance start [--chain <chain>] [--interval <seconds>] [--min-spread <pct>] [--max-break-even <days>] [--tvl-alert-threshold <pct>] [--telegram-token <token>] [--telegram-chat <id>]
 ```
 
 | Param | Default | Description |
@@ -137,6 +271,7 @@ plugin-store auto-rebalance start [--chain <chain>] [--interval <seconds>] [--mi
 | `--interval` | `3600` | Check interval in **seconds** (e.g. 300 = 5 min, 3600 = 1 hour) |
 | `--min-spread` | `0.5` | Minimum APY spread (%) to trigger rebalance |
 | `--max-break-even` | `7` | Maximum break-even days (gas cost / daily yield improvement) |
+| `--tvl-alert-threshold` | `20.0` | TVL drop (%) that triggers a non-blocking alert (emergency at 30%) |
 | `--telegram-token` | env | Telegram Bot API token (or `TELEGRAM_BOT_TOKEN` env var) |
 | `--telegram-chat` | env | Telegram chat ID (or `TELEGRAM_CHAT_ID` env var) |
 
@@ -161,11 +296,11 @@ plugin-store auto-rebalance start [--chain <chain>] [--interval <seconds>] [--mi
 - State persistence at `~/.plugin-store/auto-rebalance-state.json`
 - PID management — prevents duplicate instances
 
-### plugin-store auto-rebalance stop
+### strategy-auto-rebalance stop
 
 Sends SIGTERM to the running daemon via PID file (`~/.plugin-store/auto-rebalance-daemon.pid`).
 
-### plugin-store auto-rebalance status
+### strategy-auto-rebalance status
 
 Shows daemon status: running/stopped, config, current position (protocol + APY + balance), last check time, rebalance history.
 
@@ -192,25 +327,25 @@ Each cycle, the daemon:
 ```
 1. plugin-store aave markets --chain base             → check current Aave rates
 2. plugin-store morpho vaults --chain base            → see Morpho vault options
-3. plugin-store auto-rebalance start --chain base ...     → let the daemon auto-optimize
+3. strategy-auto-rebalance start --chain base ...     → let the daemon auto-optimize
 ```
 
 ### Workflow B: Check Status → Manual Intervention
 
 ```
-1. plugin-store auto-rebalance status                     → review position and PnL
+1. strategy-auto-rebalance status                     → review position and PnL
 2. plugin-store morpho positions <address> --chain base → verify on-chain state
-3. plugin-store auto-rebalance stop                       → stop if needed
+3. strategy-auto-rebalance stop                       → stop if needed
 ```
 
 ### Workflow C: Multi-Chain
 
 ```
 # Terminal 1
-plugin-store auto-rebalance start --chain base --interval 300 --min-spread 0.3
+strategy-auto-rebalance start --chain base --interval 300 --min-spread 0.3
 
 # Terminal 2
-plugin-store auto-rebalance start --chain ethereum --interval 3600 --min-spread 1.0
+strategy-auto-rebalance start --chain ethereum --interval 3600 --min-spread 1.0
 ```
 
 Note: each chain uses the same PID file, so only one daemon instance can run at a time. For multi-chain, run in separate terminals with separate working directories, or stop one before starting the other.
@@ -219,7 +354,7 @@ Note: each chain uses the same PID file, so only one daemon instance can run at 
 
 - **APY**: All rates are APY (compound formula from on-chain rate per second × seconds per year).
 - **Break-even**: Days for yield improvement to cover gas costs. Formula: `gas_cost / (capital × spread% / 365)`. Lower = better.
-- **TVL monitoring**: Tracks protocol TVL using median of recent vs earlier entries (not single-point comparison). A >20% drop triggers an alert; >30% triggers emergency withdrawal. History capped at 96 entries (~24h at 15min intervals).
+- **TVL monitoring**: Tracks protocol TVL using median of recent vs earlier entries (not single-point comparison). Requires at least 3 data points. A drop exceeding `tvl_alert_threshold` (default 20%, configurable) triggers a non-blocking alert; >30% triggers emergency withdrawal. History capped at 96 entries (~24h at 15min intervals).
 - **Gas circuit breaker**: Base threshold 0.5 gwei, Ethereum 50 gwei. Exceeding pauses all trading.
 - **Rebalance cooldown**: 24-hour minimum between rebalances, regardless of check interval. Prevents excessive trading from short-term APY fluctuations.
 - **Post-execution verification**: After withdrawal, verifies wallet received USDC before proceeding to deposit. Aborts if wallet balance is zero.
@@ -237,7 +372,7 @@ Note: each chain uses the same PID file, so only one daemon instance can run at 
 | Wallet has idle USDC, no position | Auto-deposits into best protocol on first cycle |
 | Break-even too long | Hold — not worth the gas cost |
 | Rebalanced recently (<24h ago) | Hold — cooldown enforced to prevent over-trading |
-| EVM_PRIVATE_KEY not set | Error on start |
+| onchainos wallet not available | Error on start — please login first |
 | Daemon already running | Start rejects with existing PID warning |
 | No running daemon | Stop returns error |
 | TVL drops 20-30% (median) | Alert notification sent, rebalancing NOT blocked |

@@ -2,35 +2,50 @@
 set -e
 
 # ──────────────────────────────────────────────────────────────
-# plugin-store installer / updater (macOS / Linux)
+# strategy binary installer / updater (macOS / Linux)
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+#   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install_strategy.sh | sh -s -- <strategy-name>
 #
-# Behavior:
-#   - Fresh install: detect platform, download latest binary, verify, install.
-#   - Already installed: skip if the same version was verified within the
-#     last 12 hours (cache at ~/.local/bin/.plugin-store/last_check). Otherwise, compare the
-#     local version with the latest GitHub release and upgrade if needed.
+# Supported strategies:
+#   strategy-auto-rebalance
+#   strategy-grid
+#   strategy-ranking-sniper
+#   strategy-signal-tracker
+#   strategy-memepump-scanner
 #
 # Supported platforms:
 #   macOS  : x86_64 (Intel), arm64 (Apple Silicon)
 #   Linux  : x86_64, i686, aarch64, armv7l
 # ──────────────────────────────────────────────────────────────
 
-BINARY="plugin-store"
-INSTALL_DIR="$HOME/.cargo/bin"
-CACHE_DIR="$HOME/.cargo/bin/.plugin-store"
-CACHE_FILE="$CACHE_DIR/last_check"
-CACHE_TTL=43200  # 12 hours in seconds
-
 REPO="okx/plugin-store"
+INSTALL_DIR="$HOME/.local/bin"
+CACHE_BASE="$HOME/.plugin-store"
 
-# Detect OS and CPU architecture, return matching Rust target triple
+# 脚本下载基础 URL，私有仓库或镜像场景下可通过环境变量覆盖
+RAW_BASE_URL="${RAW_BASE_URL:-https://raw.githubusercontent.com/okx/plugin-store/main}"
+
+STRATEGY="$1"
+
+if [ -z "$STRATEGY" ]; then
+  echo "Usage: install_strategy.sh <strategy-name>" >&2
+  echo "Available strategies:" >&2
+  echo "  strategy-auto-rebalance" >&2
+  echo "  strategy-grid" >&2
+  echo "  strategy-ranking-sniper" >&2
+  echo "  strategy-signal-tracker" >&2
+  echo "  strategy-memepump-scanner" >&2
+  exit 1
+fi
+
+CACHE_KEY=$(echo "$STRATEGY" | tr '-' '_')
+CACHE_FILE="$CACHE_BASE/last_check_${CACHE_KEY}"
+CACHE_TTL=43200  # 12 hours
+
 get_target() {
   os=$(uname -s)
   arch=$(uname -m)
-
   case "$os" in
     Darwin)
       case "$arch" in
@@ -62,14 +77,14 @@ is_cache_fresh() {
 }
 
 write_cache() {
-  mkdir -p "$CACHE_DIR"
+  mkdir -p "$CACHE_BASE"
   tmpf="${CACHE_FILE}.tmp.$$"
   date +%s > "$tmpf" && mv "$tmpf" "$CACHE_FILE"
 }
 
 get_local_version() {
-  if [ -x "$INSTALL_DIR/$BINARY" ]; then
-    "$INSTALL_DIR/$BINARY" --version 2>/dev/null | awk '{print $2}'
+  if [ -x "$INSTALL_DIR/$STRATEGY" ]; then
+    "$INSTALL_DIR/$STRATEGY" --version 2>/dev/null | awk '{print $2}'
   fi
 }
 
@@ -77,8 +92,6 @@ normalize_tag() {
   echo "$1" | sed 's/^v//'
 }
 
-# Compare two semver strings. Returns:
-#   0 if a == b,  1 if a > b,  2 if a < b
 semver_cmp() {
   if [ "$1" = "$2" ]; then return 0; fi
   local_ifs="$IFS"; IFS='.'
@@ -106,16 +119,33 @@ install_binary() {
   target=$(get_target)
   tag="$1"
 
-  binary_name="${BINARY}-${target}"
+  binary_name="${STRATEGY}-${target}"
   url="https://github.com/${REPO}/releases/download/${tag}/${binary_name}"
   checksums_url="https://github.com/${REPO}/releases/download/${tag}/checksums.txt"
 
-  echo "Installing ${BINARY} ${tag} (${target})..."
+  echo "Installing ${STRATEGY} ${tag} (${target})..."
 
   tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' EXIT
 
-  curl -sSfL "$url" -o "$tmpdir/$binary_name"
+  # Download with resume support — retries pick up from where they left off
+  max_attempts=5
+  attempt=0
+  while [ $attempt -lt $max_attempts ]; do
+    attempt=$((attempt + 1))
+    # -C - resumes partial download; exit 33 means server doesn't support resume (start over)
+    if curl -fsSL --retry 2 "$url" -o "$tmpdir/$binary_name"; then
+      break
+    fi
+    rm -f "$tmpdir/$binary_name"
+    if [ $attempt -lt $max_attempts ]; then
+      echo "Download interrupted (attempt $attempt/$max_attempts), resuming in 3s..."
+      sleep 3
+    else
+      echo "Error: download failed after $max_attempts attempts" >&2
+      exit 1
+    fi
+  done
   curl -sSfL "$checksums_url" -o "$tmpdir/checksums.txt"
 
   expected_hash=$(grep "$binary_name" "$tmpdir/checksums.txt" | awk '{print $1}')
@@ -129,41 +159,33 @@ install_binary() {
   elif command -v shasum >/dev/null 2>&1; then
     actual_hash=$(shasum -a 256 "$tmpdir/$binary_name" | awk '{print $1}')
   else
-    echo "Error: sha256sum or shasum is required to verify download" >&2
+    echo "Error: sha256sum or shasum is required" >&2
     exit 1
   fi
 
   if [ "$actual_hash" != "$expected_hash" ]; then
     echo "Error: checksum mismatch!" >&2
-    echo "  Expected: $expected_hash" >&2
-    echo "  Got:      $actual_hash" >&2
-    echo "The downloaded file may have been tampered with. Aborting." >&2
     exit 1
   fi
 
   echo "Checksum verified."
-
   mkdir -p "$INSTALL_DIR"
-  mv "$tmpdir/$binary_name" "$INSTALL_DIR/$BINARY"
-  chmod +x "$INSTALL_DIR/$BINARY"
+  mv "$tmpdir/$binary_name" "$INSTALL_DIR/$STRATEGY"
+  chmod +x "$INSTALL_DIR/$STRATEGY"
 
-  # macOS: remove Gatekeeper quarantine flag so the binary can run
   if [ "$(uname -s)" = "Darwin" ]; then
-    xattr -d com.apple.quarantine "$INSTALL_DIR/$BINARY" 2>/dev/null || true
+    xattr -d com.apple.quarantine "$INSTALL_DIR/$STRATEGY" 2>/dev/null || true
   fi
 
-  echo "Installed ${BINARY} ${tag} to ${INSTALL_DIR}/${BINARY}"
+  echo "Installed ${STRATEGY} ${tag} to ${INSTALL_DIR}/${STRATEGY}"
 }
 
 ensure_in_path() {
-  # Check if INSTALL_DIR is already in PATH
   case ":$PATH:" in
     *":$INSTALL_DIR:"*) return 0 ;;
   esac
 
   EXPORT_LINE="export PATH=\"\$HOME/.local/bin:\$PATH\""
-
-  # Detect shell and pick profile file
   shell_name=$(basename "$SHELL" 2>/dev/null || echo "sh")
   case "$shell_name" in
     zsh)  profile="$HOME/.zshrc" ;;
@@ -179,7 +201,6 @@ ensure_in_path() {
     *)    profile="$HOME/.profile" ;;
   esac
 
-  # Skip if already present in profile
   if [ -f "$profile" ] && grep -qF '$HOME/.local/bin' "$profile" 2>/dev/null; then
     return 0
   fi
@@ -187,39 +208,30 @@ ensure_in_path() {
   echo "" >> "$profile"
   echo "# Added by plugin-store installer" >> "$profile"
   echo "$EXPORT_LINE" >> "$profile"
-
-  # Make it available in the current script process
   export PATH="$INSTALL_DIR:$PATH"
 
-  echo ""
   echo "Added $INSTALL_DIR to PATH in $profile"
-  echo "To start using '${BINARY}' now, run:"
-  echo ""
-  echo "  source $profile"
-  echo ""
-  echo "Or simply open a new terminal window."
+  echo "Run: source $profile"
 }
 
 main() {
   local_ver=$(get_local_version)
 
-  # Fast path: already installed and checked within the last 12 hours
   if [ -n "$local_ver" ] && is_cache_fresh; then
-    echo "${BINARY} ${local_ver} is already installed (update check skipped, checked recently)."
+    echo "${STRATEGY} ${local_ver} is already installed (update check skipped)."
     return 0
   fi
 
-  # Fetch latest release tag from GitHub API
-  api_response=$(curl -sSf "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null) || api_response=""
-  [ -n "$api_response" ] || {
-    echo "Warning: could not reach GitHub API. Skipping update check." >&2
+  api_response=$(curl -sSf "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null) || {
+    echo "Warning: could not reach GitHub API." >&2
     if [ -n "$local_ver" ]; then return 0; fi
-    echo "Error: no local installation found and cannot reach GitHub." >&2
+    echo "Error: no local installation and cannot reach GitHub." >&2
     exit 1
   }
+
   tag=$(echo "$api_response" | grep '"tag_name"' | head -1 | cut -d'"' -f4)
   if [ -z "$tag" ]; then
-    echo "Error: could not determine latest release from GitHub API response" >&2
+    echo "Error: could not determine latest release" >&2
     if [ -n "$local_ver" ]; then return 0; fi
     exit 1
   fi
@@ -230,21 +242,19 @@ main() {
     semver_cmp "$local_ver" "$latest_ver" || cmp_result=$?
     cmp_result=${cmp_result:-0}
     if [ "$cmp_result" -eq 0 ]; then
-      echo "${BINARY} ${local_ver} is already up to date."
-      write_cache
-      return 0
+      echo "${STRATEGY} ${local_ver} is already up to date."
+      write_cache; return 0
     elif [ "$cmp_result" -eq 1 ]; then
-      echo "${BINARY} ${local_ver} is newer than latest release ${latest_ver}. Skipping."
-      write_cache
-      return 0
+      echo "${STRATEGY} ${local_ver} is newer than ${latest_ver}. Skipping."
+      write_cache; return 0
     fi
-    echo "Upgrading ${BINARY} from ${local_ver} to ${latest_ver}..."
+    echo "Upgrading ${STRATEGY} from ${local_ver} to ${latest_ver}..."
   fi
 
   install_binary "$tag"
   write_cache
   ensure_in_path
-  echo "Run '${BINARY} --help' to get started."
+  echo "Run '${STRATEGY} --help' to get started."
 }
 
 main

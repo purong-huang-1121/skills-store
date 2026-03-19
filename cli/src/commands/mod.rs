@@ -1,9 +1,6 @@
 pub mod dapp_aave;
 pub mod dapp_ethena;
-pub mod dapp_hyperliquid;
-pub mod dapp_kalshi;
 pub mod dapp_morpho;
-pub mod dapp_polymarket;
 pub mod dapp_uniswap;
 pub mod strategy_auto_rebalance;
 pub mod strategy_grid;
@@ -12,10 +9,7 @@ pub mod strategy_ranking_sniper;
 pub mod strategy_signal_tracker;
 
 use crate::chains;
-use crate::client::ApiClient;
 use crate::config::AppConfig;
-use crate::Cli;
-use anyhow::Result;
 
 /// Shared execution context for all commands.
 #[allow(dead_code)]
@@ -23,25 +17,9 @@ pub struct Context {
     pub config: AppConfig,
     pub base_url_override: Option<String>,
     pub chain_override: Option<String>,
-    pub output_format: crate::OutputFormat,
 }
 
 impl Context {
-    pub fn new(cli: &Cli) -> Self {
-        let config = AppConfig::load().unwrap_or_default();
-        Self {
-            config,
-            base_url_override: cli.base_url.clone(),
-            chain_override: cli.chain.clone(),
-            output_format: cli.output,
-        }
-    }
-
-    /// Create an OKX API client with HMAC-SHA256 authentication.
-    pub fn client(&self) -> Result<ApiClient> {
-        ApiClient::new(self.base_url_override.as_deref())
-    }
-
     /// Resolve chain to OKX chainIndex (e.g. "ethereum" -> "1", "solana" -> "501").
     pub fn chain_index(&self) -> Option<String> {
         let chain = self

@@ -1,15 +1,33 @@
 ---
-name: dapp-composer
+name: plugin-store
 description: >-
-  This skill should be used when the user asks about on-chain earning opportunities,
-  'how to make money on-chain', 'any profitable strategies', 'arbitrage opportunities',
+  This is the main on-chain DeFi skill. Use it for ALL of the following:
+
+  Strategy discovery: 'how to make money on-chain', 'any profitable strategies',
   '链上有什么赚钱机会', '有什么盈利机会', '有什么套利机会', '怎么赚钱', '有什么好的策略',
   '帮我理财', '有什么收益机会', 'yield opportunities', 'how to earn', 'investment strategy',
-  'DeFi 策略推荐', '有什么自动化策略', 'automated strategies', 'passive income on-chain',
-  or mentions looking for on-chain profit, yield, or automated trading opportunities.
-  This is a strategy discovery and routing skill — it presents available built-in strategies
-  and routes users to the correct skill. Do NOT use for single-protocol operations
-  (use plugin-store aave, plugin-store hyperliquid, etc. directly).
+  'DeFi 策略推荐', '有什么自动化策略', 'automated strategies', 'passive income on-chain'.
+
+  Capability discovery: '你能做什么', '你有什么能力', '你支持什么', '有什么技能', '都有什么功能',
+  '支持哪些策略', '支持哪些 skill', 'what skills are available', 'what can you do',
+  'what strategies do you support', 'show me all strategies', 'list all skills'.
+
+  Aave V3 lending: 'Aave', 'supply to Aave', 'deposit into Aave', 'withdraw from Aave',
+  'Aave APY', 'Aave markets', 'lending rates', 'health factor', 'borrow on Aave',
+  'repay Aave', 'DeFi lending', 'Aave V3'.
+
+  Morpho lending: 'Morpho', 'Morpho Blue', 'MetaMorpho vaults', 'Morpho lending rates',
+  'Morpho markets', 'deposit into Morpho', 'withdraw from Morpho', 'Morpho positions',
+  'ERC-4626 vaults'.
+
+  Uniswap swaps: 'Uniswap', 'swap on Uniswap', 'Uniswap V3 swap', 'Uniswap quote',
+  'swap WETH for USDC on Uniswap', 'trade tokens on Uniswap', 'Uniswap fee tiers',
+  'on-chain token swap', 'concentrated liquidity swap'.
+
+  Ethena staking: 'Ethena', 'sUSDe', 'USDe staking', 'sUSDe yield', 'sUSDe APY',
+  'stake USDe', 'unstake sUSDe', 'Ethena balance', 'sUSDe exchange rate', 'cooldown period'.
+
+  Also activates when the skill has just been installed and the user has not yet chosen a direction.
 license: Apache-2.0
 metadata:
   author: okx
@@ -21,30 +39,229 @@ metadata:
 
 Helps users discover and launch built-in automated strategies. This skill contains no CLI commands — it guides users to choose a strategy and then hands off to the corresponding skill.
 
+---
+
+## Post-Install Welcome & Capability Discovery
+
+### Trigger
+
+Activate this section when ANY of the following is true:
+- The skill was **just installed** (user ran `/install plugin-store` or equivalent) and hasn't asked a specific question yet
+- User asks **"你能做什么"**, **"你有什么能力"**, **"支持哪些策略"**, **"有什么 skill"**, **"what can you do"**, **"what skills are available"**, **"show me all strategies"**, or any similar capability/discovery query
+- User asks **"都有哪些插件"**, **"都有什么功能"**, **"你支持什么"**
+
+### Response
+
+Present the following welcome message:
+
+```
+你好！除了内置的链上操作能力，我们还提供 5 个自动化策略——
+帮你真正实现链上躺赚，无需手动盯盘：
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🤖 推荐安装：自动化策略技能
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  A. USDC 智能调仓             ⭐ 低风险 · 稳定收益
+     分类：DeFi · 套利  |  作者：徐易朗
+     自动在 Aave/Compound/Morpho 间轮动最高收益
+     预估年化 3%~8%，稳定币无币价风险，全自动守护进程
+
+  B. ETH/USDC 网格交易         ⭐⭐ 中低风险 · 震荡收益
+     分类：DeFi · 交易  |  作者：单杰
+     震荡行情自动低买高卖
+     预估年化 10%~30%，自适应波动率，Base 链极低 gas
+
+  C. SOL 涨幅榜狙击            ⭐⭐⭐ 高风险 · SOL 动量
+     分类：MEME交易  |  作者：Suning Yao
+     新币上榜自动买入，跌出自动卖出
+     25 项安全检查 + 6 层退出机制
+
+  D. SOL 聪明钱跟单            ⭐⭐⭐ 高风险 · 聪明钱
+     分类：MEME交易  |  作者：Ray Zhou & Cai Shuai
+     跟随 SmartMoney/KOL/Whale 信号
+     多重风控 + Session 连亏熔断保护
+
+  E. SOL Memepump 扫描         ⭐⭐⭐ 高风险 · Meme 动量
+     分类：MEME交易  |  作者：Victor Lee
+     捕捉 Pump.fun 迁移后动量爆发
+     三重信号共振，30min 最大持仓保护
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+告诉我你感兴趣的策略，我来帮你安装（支持同时安装多个）。
+
+─────────────────────────────────────────────────────
+已内置协议操作（直接告诉我想用哪个即可）：
+Aave 借贷 · Morpho · Uniswap swap · Ethena sUSDe
+```
+
+After presenting the welcome message, wait for the user's response. Do NOT immediately ask follow-up questions — let the user lead.
+
 ## Pre-flight Checks
 
-Same as sub-skills. Run once per session:
+Run once per session before executing any `plugin-store` command. Do not echo routine output to the user.
 
-1. **Confirm installed**: Run `which plugin-store`. If not found, install:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
-   ```
-2. **Check for updates**: Read `~/.plugin-store/last_check`, skip if updated within 12 hours.
+### Step 1: Check plugin-store binary
+
+```bash
+which plugin-store
+```
+
+- **Not found** → install:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/install.sh | sh
+  ```
+
+### Step 2: Check for updates (12h cache)
+
+```bash
+CACHE="$HOME/.plugin-store/update_check/skill-plugin-store"
+NOW=$(date +%s)
+LAST=$(cat "$CACHE" 2>/dev/null || echo 0)
+if [ $((NOW - LAST)) -ge 43200 ]; then
+  mkdir -p "$(dirname "$CACHE")" && echo "$NOW" > "$CACHE"
+  LOCAL=$(plugin-store --version 2>/dev/null | awk '{print $2}')
+  LATEST=$(curl -sSf --max-time 3 \
+    "https://api.github.com/repos/okx/plugin-store/releases/latest" \
+    2>/dev/null | grep '"tag_name"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
+  [ -n "$LATEST" ] && [ "$LATEST" != "$LOCAL" ] && echo "NEW_VERSION:$LATEST"
+fi
+```
+
+- If output contains `NEW_VERSION:X.X.X` → tell user:
+  ```
+  plugin-store 有新版本 X.X.X 可用，建议更新（当前 {LOCAL}）：
+  curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/reinstall.sh | sh
+  ```
+  Ask user if they want to update now before continuing.
+- Otherwise → proceed silently.
 
 ## Skill Routing
 
-### dApp 平台（单一协议操作）
-- User asks about **Aave** (存款、借贷、利率) → use `plugin-store aave`
-- User asks about **Morpho** (vault、借贷) → use `plugin-store morpho`
-- User asks about **Uniswap** (换币、swap、报价) → use `plugin-store uniswap`
-- User asks about **Hyperliquid** (永续合约、funding rate、现货) → use `plugin-store hyperliquid`
-- User asks about **Ethena** (sUSDe、质押、收益) → use `plugin-store ethena`
-- User asks about **Polymarket** (预测市场、下注) → use `plugin-store polymarket`
-- User asks about **Kalshi** (合规预测市场) → use `plugin-store kalshi`
+### 安装后 / 能力查询
+- User **just installed** this skill, or asks **"你能做什么"**, **"有什么技能"**, **"支持哪些策略"**, **"what can you do"**, **"list skills"** → **Show Post-Install Welcome** (see above)
+
+### dApp 协议（已内置，直接执行 plugin-store 命令）
+- User asks about **Aave** (存款、借贷、利率) → see **[Aave V3 CLI Reference]** below, run `plugin-store aave`
+- User asks about **Morpho** (vault、借贷) → see **[Morpho CLI Reference]** below, run `plugin-store morpho`
+- User asks about **Uniswap** (换币、swap、报价) → see **[Uniswap CLI Reference]** below, run `plugin-store uniswap`
+- User asks about **Ethena** (sUSDe、质押、收益) → see **[Ethena CLI Reference]** below, run `plugin-store ethena`
 
 ### 自动化策略
-- User asks about **grid trading specifically** → use `plugin-store grid`
-- User asks about **USDC yield / auto-rebalance specifically** → use `plugin-store auto-rebalance`
+- User asks about **Grid Trading / 网格交易** → use `strategy-grid`
+- User asks about **USDC Yield / Auto Rebalance / 智能调仓** → use `strategy-auto-rebalance`
+- User asks about **SOL Ranking Sniper / 涨幅榜狙击** → use `strategy-ranking-sniper`
+- User asks about **Smart Money / Signal Tracker / 聪明钱跟单 / KOL跟单** → use `strategy-signal-tracker`
+- User asks about **Memepump / Pump.fun / Meme Scanner / 土狗扫描** → use `strategy-memepump-scanner`
+
+### 策略安装（重要）
+
+当用户表达想要使用某个策略时（如"我要用网格交易"、"安装聪明钱跟单"、"我想试试涨幅榜狙击"、"我要用A和C"等），**直接执行对应的安装命令**，无需再次询问确认：
+
+| 用户意图 | 执行命令 |
+|---|---|
+| USDC 智能调仓 / Auto Rebalance  | `npx skills add okx/plugin-store --skill strategy-auto-rebalance` |
+| ETH/USDC 网格交易 / Grid Trade  | `npx skills add okx/plugin-store --skill strategy-grid-trade` |
+| SOL 涨幅榜狙击 / Ranking Sniper | `npx skills add okx/plugin-store --skill strategy-ranking-sniper` |
+| SOL 聪明钱跟单 / Signal Tracker | `npx skills add okx/plugin-store --skill strategy-signal-tracker` |
+| SOL Memepump 扫描 / Memepump Scanner | `npx skills add okx/plugin-store --skill strategy-memepump-scanner` |
+
+如果用户想安装**多个策略**，用空格分隔 skill 名称：
+```bash
+npx skills add okx/plugin-store --skill strategy-grid-trade strategy-signal-tracker
+```
+
+如果 skill 已存在，直接使用 `--yes` 覆盖安装，无需询问用户：
+```bash
+npx skills add okx/plugin-store --skill strategy-grid-trade --yes
+```
+
+### 安装后：提示配置环境变量（重要）
+
+安装命令执行完毕后，**必须**告知用户需要创建 `.env` 文件并配置对应的环境变量，否则策略无法运行。根据用户安装的策略展示对应的 example：
+
+---
+
+**USDC 智能调仓（strategy-auto-rebalance）**
+```bash
+# 使用 onchainos 钱包登录（EVM 链签名）
+onchainos wallet login
+
+# 可选：Telegram 通知（在 ~/.plugin-store/.env 中配置）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**ETH/USDC 网格交易（strategy-grid-trade）**
+```bash
+# 使用 onchainos 钱包登录（Base 链签名）
+onchainos wallet login
+
+# 可选（~/.plugin-store/.env）
+BASE_RPC_URL=你的自定义RPC（默认使用公共节点）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL 涨幅榜狙击（strategy-ranking-sniper）**
+```bash
+# 使用 onchainos 钱包登录（Solana 链签名）
+onchainos wallet login
+
+# 可选（~/.plugin-store/.env）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL 聪明钱跟单（strategy-signal-tracker）**
+```bash
+# 使用 onchainos 钱包登录（Solana 链签名）
+onchainos wallet login
+
+# 可选（~/.plugin-store/.env）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+**SOL Memepump 扫描（strategy-memepump-scanner）**
+```bash
+# 使用 onchainos 钱包登录（Solana 链签名）
+onchainos wallet login
+
+# 可选（~/.plugin-store/.env）
+TELEGRAM_BOT_TOKEN=你的BotToken
+TELEGRAM_CHAT_ID=你的ChatID
+```
+
+---
+
+展示完对应的 `.env` 示例后，提示用户：
+```
+配置完成后，在 .env 所在目录运行策略命令即可。
+如需帮助，直接告诉我你遇到的问题。
+```
+
+**重要：安装后需要重启 Claude**
+
+如果用户使用的是 Claude 桌面版（Claude Desktop），安装完成后必须提醒：
+
+```
+✅ 安装完成！
+
+⚠️  请重启 Claude 桌面版，新安装的策略 skill 才会生效。
+重启后重新打开对话，即可开始使用。
+```
+
+如果用户使用的是 Claude Code（命令行），无需重启，skill 立即生效。
 
 ### 策略发现（本 skill）
 - User asks **"有什么赚钱/盈利/套利机会"** or general strategy discovery → **use this skill**
@@ -59,13 +276,39 @@ User says: "链上有什么赚钱机会", "有什么盈利机会", "有什么套
 
 ### Step 1: Present Built-in Strategies and Supported Platforms
 
+展示策略列表前，先运行以下命令获取各策略的累计下载量：
+
+```bash
+curl -s "https://api.github.com/repos/okx/plugin-store/releases?per_page=100" | python3 -c "
+import json,sys
+from collections import defaultdict
+default_order=['strategy-auto-rebalance','strategy-grid','strategy-ranking-sniper','strategy-signal-tracker','strategy-memepump-scanner']
+d=json.load(sys.stdin)
+t=defaultdict(int)
+for r in d:
+    for a in r.get('assets',[]):
+        for s in default_order:
+            if a['name'].startswith(s): t[s]+=a['download_count']
+sorted_list=sorted(default_order,key=lambda s:(-t[s],default_order.index(s)))
+for s in sorted_list: print(f'{s}:{t[s]}')
+"
+```
+
+根据命令输出：
+1. **按下载量从高到低重新排列**策略顺序（下载量相同时保持默认顺序）
+2. 字母编号 A~E 随新顺序重新分配
+3. 每个策略标题行末尾追加 `📥 X 次`
+
+如果命令执行失败或无网络，跳过下载量展示，按默认顺序正常显示策略列表。
+
 Present the two automated strategies and the supported dApp ecosystem:
 
 ```
 目前内置了 6 个策略（3 个 EVM + 3 个 Solana）：
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  A. USDC 智能调仓 (Auto-Rebalance)                                 │
+│  A. USDC 智能调仓 (Auto Rebalance)                                 │
+│     分类：DeFi · 套利  |  作者：徐易朗                              │
 │                                                                     │
 │  自动在 Aave V3、Compound V3、Morpho 三个协议之间寻找最优 USDC      │
 │  收益率，检测到利差超过阈值时自动调仓。                              │
@@ -78,6 +321,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 特点：TVL 安全监控、Gas 熔断、Telegram 通知                      │
 ├─────────────────────────────────────────────────────────────────────┤
 │  B. ETH/USDC 网格交易 (Grid Trading)                                │
+│     分类：DeFi · 交易  |  作者：单杰                                │
 │                                                                     │
 │  基于 EMA 动态网格，在价格波动中自动低买高卖，赚取网格利润。         │
 │  通过 OKX DEX 聚合器执行链上 swap。                                  │
@@ -87,7 +331,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  ● 风险等级：⭐⭐ 中低（持有 ETH 有币价风险，网格对冲部分波动）      │
 │  ● 预估年化：10%~30%（取决于市场波动率，震荡行情最佳）              │
 │  ● 运行方式：后台守护进程，默认每 60 秒执行一次（可通过               │
-│    plugin-store grid set --key tick_interval_secs --value N 调整）      │
+│    strategy-grid set --key tick_interval_secs --value N 调整）      │
 │  ● 特点：自适应波动率、风控熔断、仓位限制、失败重试                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  C. 稳定币杠杆循环 (Aave Leverage Loop)                              │
@@ -107,6 +351,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │  D. SOL 涨幅榜狙击 (Ranking Sniper)                                  │
+│     分类：MEME交易  |  作者：Suning Yao                             │
 │                                                                     │
 │  实时监控 Solana 涨幅榜 Top 20，新币上榜自动买入、跌出自动卖出。     │
 │  不预判哪个币能涨，而是吃上榜后的那一段动量。                        │
@@ -121,6 +366,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │          current-price, quote, swap)                                 │
 ├─────────────────────────────────────────────────────────────────────┤
 │  E. SOL 聪明钱跟单 (Signal Tracker)                                  │
+│     分类：MEME交易  |  作者：Ray Zhou & Cai Shuai                   │
 │                                                                     │
 │  实时监控链上聪明钱动向，多个高质量钱包同时买入同一代币时自动跟单。   │
 │  SmartMoney / KOL / Whale 三类信号，跟着最聪明的钱走。               │
@@ -136,6 +382,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │          tokenDevInfo, tokenBundleInfo, balances, quote, swap)       │
 ├─────────────────────────────────────────────────────────────────────┤
 │  F. SOL Memepump 扫描 (Memepump Scanner)                             │
+│     分类：MEME交易  |  作者：Victor Lee                             │
 │                                                                     │
 │  实时扫描 Pump.fun 迁移代币，TX加速 + 成交量突增 + 买压主导          │
 │  三信号共振时自动买入——捕捉安全验证后的动量爆发瞬间。                │
@@ -152,10 +399,10 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 请选择：输入 A ~ F
 
-此外，我们还支持以下 dApp 平台，可以直接交互：
+此外，我们还支持以下 dApp 协议，可以直接交互：
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  支持的 dApp 平台                                                   │
+│  支持的 dApp 协议                                                   │
 ├──────────────┬──────────────────────┬───────────────────────────────┤
 │  平台         │  类型                │  支持链                       │
 ├──────────────┼──────────────────────┼───────────────────────────────┤
@@ -164,10 +411,7 @@ Present the two automated strategies and the supported dApp ecosystem:
 │  Compound V3 │  借贷协议            │  Base, Ethereum               │
 │  Morpho      │  借贷协议 (Vault)    │  Base, Ethereum               │
 │  Uniswap V3  │  DEX 链上交易         │  Arbitrum, Ethereum, Polygon  │
-│  Hyperliquid │  永续合约 + 现货交易  │  Hyperliquid L1               │
 │  Ethena      │  sUSDe 质押收益       │  Ethereum                     │
-│  Polymarket  │  预测市场             │  Polygon                      │
-│  Kalshi      │  合规预测市场 (美国)  │  -（中心化）                  │
 └──────────────┴──────────────────────┴───────────────────────────────┘
 
 如果你想直接使用某个平台（如 "帮我在 Aave 存 USDC"、"Uniswap 换币"），
@@ -176,20 +420,22 @@ Present the two automated strategies and the supported dApp ecosystem:
 
 ### Step 2: User Selects Strategy or Platform
 
+**字母选择（A/B/C/D/E）：根据上方实际展示的顺序动态映射**，不得硬编码字母与策略的对应关系。例如若展示时 Ranking Sniper 排在第一位显示为 A，则用户输入"A"应路由到 Flow D（Ranking Sniper）。
+
+**按策略名称/关键词路由（始终有效）：**
+
 | User says | Action |
 |-----------|--------|
-| "A", "调仓", "auto-rebalance", "USDC 收益" | → Go to **Flow A** |
-| "B", "网格", "grid", "grid trading" | → Go to **Flow B** |
-| "C", "杠杆循环", "leverage loop", "套利" | → Go to **Flow C** |
-| "D", "涨幅榜", "ranking", "榜单狙击" | → Go to **Flow D** |
-| "E", "聪明钱", "signal", "跟单", "smart money" | → Go to **Flow E** |
-| "F", "memepump", "pump.fun", "meme 扫描" | → Go to **Flow F** |
+| "调仓", "Auto Rebalance", "USDC 收益", "auto-rebalance" | → Go to **Flow A** |
+| "网格", "Grid", "Grid Trading", "grid" | → Go to **Flow B** |
+| "杠杆循环", "Leverage Loop", "套利" | → Go to **Flow C** |
+| "涨幅榜", "Ranking Sniper", "榜单狙击", "ranking" | → Go to **Flow D** |
+| "聪明钱", "Signal Tracker", "跟单", "Smart Money", "signal" | → Go to **Flow E** |
+| "Memepump", "Pump.fun", "Meme Scanner", "memepump" | → Go to **Flow F** |
 | "都要", "both", "两个都跑" | → Explain that multiple strategies can run concurrently, guide one by one |
 | "Aave", "存款", "借贷" | → Route to `plugin-store aave` commands |
 | "Uniswap", "换币", "swap" | → Route to `plugin-store uniswap` commands |
-| "Hyperliquid", "永续", "合约" | → Route to `plugin-store hyperliquid` commands |
 | "Ethena", "sUSDe", "质押" | → Route to `plugin-store ethena` commands |
-| "Polymarket", "预测市场" | → Route to `plugin-store polymarket` commands |
 | Mentions a specific dApp platform | → Route to the corresponding `plugin-store <dapp>` commands |
 
 ---
@@ -242,7 +488,7 @@ If user provides wallet address or says "帮我查" → use `plugin-store portfo
 After confirmation, execute:
 
 ```bash
-plugin-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
+strategy-auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 ```
 
 ### Step A4: Post-launch guidance
@@ -251,12 +497,12 @@ plugin-store auto-rebalance start --chain {chain} --interval 60 --min-spread 0.5
 智能调仓守护进程已启动！
 
 后续操作：
-• 查看状态：plugin-store auto-rebalance status
-• 停止运行：plugin-store auto-rebalance stop
+• 查看状态：strategy-auto-rebalance status
+• 停止运行：strategy-auto-rebalance stop
 • 设置 Telegram 通知（推荐）：
   export TELEGRAM_BOT_TOKEN=<TOKEN>
   export TELEGRAM_CHAT_ID=<CHAT_ID>
-  plugin-store auto-rebalance start --chain {chain}
+  strategy-auto-rebalance start --chain {chain}
 ```
 
 ---
@@ -284,7 +530,7 @@ If user provides wallet address or says "帮我查" → use `plugin-store portfo
 Before launching, run market analysis:
 
 ```bash
-plugin-store grid analyze
+strategy-grid analyze
 ```
 
 Present results to user:
@@ -318,7 +564,7 @@ Market comment logic:
 | 链 | Base |
 | 可用资金 | ~${total_usd} (ETH + USDC) |
 | 网格级数 | 6 |
-| 执行频率 | 每 60 秒（可通过 plugin-store grid set --key tick_interval_secs 调整） |
+| 执行频率 | 每 60 秒（可通过 strategy-grid set --key tick_interval_secs 调整） |
 | 单笔上限 | 12% 总仓位 |
 | 仓位保护 | ETH 占比 35%~65% |
 
@@ -328,7 +574,7 @@ Market comment logic:
 After confirmation, execute:
 
 ```bash
-plugin-store grid start
+strategy-grid start
 ```
 
 ### Step B4: Post-launch guidance
@@ -337,13 +583,13 @@ plugin-store grid start
 网格交易 Bot 已启动！
 
 后续操作：
-• 查看状态：plugin-store grid status
-• 查看收益：plugin-store grid report
-• 交易记录：plugin-store grid history
-• 停止运行：plugin-store grid stop
-• 市场分析：plugin-store grid analyze
-• 调整参数：plugin-store grid set --key <name> --value <value>
-• 查看配置：plugin-store grid config
+• 查看状态：strategy-grid status
+• 查看收益：strategy-grid report
+• 交易记录：strategy-grid history
+• 停止运行：strategy-grid stop
+• 市场分析：strategy-grid analyze
+• 调整参数：strategy-grid set --key <name> --value <value>
+• 查看配置：strategy-grid config
 ```
 
 ---
@@ -434,7 +680,7 @@ After user provides amount:
 | 预估净年化 | {net_apy}% |
 | 预估月收益 | ~${monthly} |
 
-需要 EVM_PRIVATE_KEY 签署链上交易
+需要 onchainos 钱包签署链上交易
 确认执行？(Y/n)
 ```
 
@@ -567,15 +813,15 @@ Alerts:
    - 追踪止损（+8%激活/12%回撤）> 时间止损（6h）> 梯度止盈（+5%/+15%/+30% 分三批）
 5. **安全网**: 停止引擎自动清仓所有持仓，日亏损上限 15% 自动停机
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store ranking-sniper tick` | 执行单次轮询 |
-| `plugin-store ranking-sniper start` | 启动守护进程 |
-| `plugin-store ranking-sniper stop` | 停止运行 |
-| `plugin-store ranking-sniper status` | 查看状态 |
-| `plugin-store ranking-sniper report` | 详细 PnL 报告 |
+| `strategy-ranking-sniper tick` | 执行单次轮询 |
+| `strategy-ranking-sniper start` | 启动守护进程 |
+| `strategy-ranking-sniper stop` | 停止运行 |
+| `strategy-ranking-sniper status` | 查看状态 |
+| `strategy-ranking-sniper report` | 详细 PnL 报告 |
 
 ### Step D1: Confirm and configure
 
@@ -583,7 +829,7 @@ Alerts:
 SOL 涨幅榜狙击 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥（用于签署链上交易）
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL（用于交易 + Gas）
 • plugin-store 已安装
 
@@ -596,10 +842,10 @@ SOL 涨幅榜狙击 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store ranking-sniper config
+strategy-ranking-sniper config
 
 # 启动
-plugin-store ranking-sniper start
+strategy-ranking-sniper start
 ```
 
 ---
@@ -629,15 +875,15 @@ plugin-store ranking-sniper start
    - 趋势时间止损（15min K线反转）+ 4h 硬性退出
 8. **Session 风控**: 连续亏损 3 次暂停 10min / 累计亏损 0.05 SOL 暂停 30min / 累计 0.10 SOL 终止
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store signal-tracker tick` | 执行单次轮询 |
-| `plugin-store signal-tracker start` | 启动守护进程 |
-| `plugin-store signal-tracker stop` | 停止运行 |
-| `plugin-store signal-tracker status` | 查看状态 |
-| `plugin-store signal-tracker report` | 详细 PnL 报告 |
+| `strategy-signal-tracker tick` | 执行单次轮询 |
+| `strategy-signal-tracker start` | 启动守护进程 |
+| `strategy-signal-tracker stop` | 停止运行 |
+| `strategy-signal-tracker status` | 查看状态 |
+| `strategy-signal-tracker report` | 详细 PnL 报告 |
 
 ### Step E1: Confirm and configure
 
@@ -645,7 +891,7 @@ plugin-store ranking-sniper start
 SOL 聪明钱跟单 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL
 • plugin-store 已安装
 
@@ -658,13 +904,13 @@ SOL 聪明钱跟单 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store signal-tracker config
+strategy-signal-tracker config
 
 # 启动（推荐先用 dry-run 测试）
-plugin-store signal-tracker start --dry-run
+strategy-signal-tracker start --dry-run
 
 # 确认无误后正式启动
-plugin-store signal-tracker start
+strategy-signal-tracker start
 ```
 
 ---
@@ -698,16 +944,16 @@ plugin-store signal-tracker start
    - 时间止损（SCALP 5min / HOT 8min / QUIET 15min）
    - TP1 后 breakeven stop + Trailing -5%，最大持仓 30min
 
-### 依赖的 plugin-store 命令
+### CLI 命令
 
 | CLI 命令 | 用途 |
 |----------|------|
-| `plugin-store scanner tick` | 执行单次扫描 |
-| `plugin-store scanner start` | 启动守护进程 |
-| `plugin-store scanner stop` | 停止运行 |
-| `plugin-store scanner status` | 查看状态 |
-| `plugin-store scanner report` | 详细 PnL 报告 |
-| `plugin-store scanner analyze` | Dry-run 分析 |
+| `strategy-memepump-scanner tick` | 执行单次扫描 |
+| `strategy-memepump-scanner start` | 启动守护进程 |
+| `strategy-memepump-scanner stop` | 停止运行 |
+| `strategy-memepump-scanner status` | 查看状态 |
+| `strategy-memepump-scanner report` | 详细 PnL 报告 |
+| `strategy-memepump-scanner analyze` | Dry-run 分析 |
 
 ### Step F1: Confirm and configure
 
@@ -715,7 +961,7 @@ plugin-store signal-tracker start
 SOL Memepump 扫描 运行在 Solana 链上。
 
 需要准备：
-• SOL 钱包私钥
+• onchainos 钱包登录（`onchainos wallet login`）
 • 钱包中有足够 SOL
 • plugin-store 已安装
 
@@ -728,13 +974,13 @@ SOL Memepump 扫描 运行在 Solana 链上。
 
 ```bash
 # 查看当前配置
-plugin-store scanner config
+strategy-memepump-scanner config
 
 # 先用 analyze 观察
-plugin-store scanner analyze
+strategy-memepump-scanner analyze
 
 # 启动
-plugin-store scanner start
+strategy-memepump-scanner start
 ```
 
 ---
@@ -749,40 +995,29 @@ plugin-store scanner start
 | 风险 | Low | Medium-Low | Low | High | High | High |
 | 最佳市况 | 任何市况 | 震荡行情 | 存借利差为正 | Meme 行情活跃 | 聪明钱活跃期 | Pump.fun 热潮期 |
 | 最小资金 | ~$500 (ETH) | ~$50 | ~$100 (Arb) | ~0.5 SOL | ~0.3 SOL | ~0.2 SOL |
-| 需要的密钥 | EVM_PRIVATE_KEY | EVM_PRIVATE_KEY + OKX API | EVM_PRIVATE_KEY | SOL 私钥 + OKX API | SOL 私钥 + OKX API | SOL 私钥 + OKX API |
+| 需要的密钥 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 | onchainos 钱包 |
 | 运行方式 | 后台守护进程 | 后台守护进程 | AI 引导执行 | 后台守护进程 | 后台守护进程 | 后台守护进程 |
-| CLI 命令 | `plugin-store auto-rebalance` | `plugin-store grid` | `plugin-store aave` | `plugin-store ranking-sniper` | `plugin-store signal-tracker` | `plugin-store scanner` |
+| CLI 命令 | `strategy-auto-rebalance` | `strategy-grid` | `plugin-store aave` | `strategy-ranking-sniper` | `strategy-signal-tracker` | `strategy-memepump-scanner` |
 
 ## Authentication Requirements
 
 | 策略 | 环境变量 | 说明 |
 |------|---------|------|
-| A | `EVM_PRIVATE_KEY` | 用于签署链上交易 |
+| A | onchainos 钱包登录 | `onchainos wallet login` 授权 EVM 链签名 |
 | A (可选) | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | Telegram 通知 |
-| B | `EVM_PRIVATE_KEY` | 用于签署链上交易 |
-| B | `OKX_API_KEY` + `OKX_SECRET_KEY` + `OKX_PASSPHRASE` | OKX DEX 聚合器 API |
+| B | onchainos 钱包登录 | `onchainos wallet login` 授权 Base 链签名 |
 | B (可选) | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | Telegram 通知 |
-| C | `EVM_PRIVATE_KEY` | 用于签署 Aave supply/borrow 交易 |
-| D/E/F | `SOL_PRIVATE_KEY` | Solana 钱包私钥，用于链上交易 |
-| D/E/F | `OKX_API_KEY` + `OKX_SECRET_KEY` + `OKX_PASSPHRASE` | OKX DEX API（报价 + swap） |
+| C | onchainos 钱包登录 | `onchainos wallet login` 授权 Aave supply/borrow 签名 |
+| D/E/F | onchainos 钱包登录 | `onchainos wallet login` 授权 Solana 链签名 |
 
 If user hasn't set up keys, guide them:
 
 ```
-需要先配置环境变量。在 .env 文件中添加：
+需要先登录 onchainos 钱包（用于链上签名）：
 
-# EVM 策略 (A/B/C) — 钱包私钥
-EVM_PRIVATE_KEY=0x...
+onchainos wallet login
 
-# Solana 策略 (D/E/F) — 钱包私钥
-SOL_PRIVATE_KEY=...
-
-# 策略 B/D/E/F 需要 — OKX API
-OKX_API_KEY=...
-OKX_SECRET_KEY=...
-OKX_PASSPHRASE=...
-
-# 可选 — Telegram 通知
+# 可选 — Telegram 通知（在 ~/.plugin-store/.env 中）
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
@@ -794,10 +1029,12 @@ TELEGRAM_CHAT_ID=...
 | User asks for both strategies | Guide to run both in separate terminals |
 | User has no USDC | Suggest using `plugin-store uniswap swap` to swap first |
 | User has no ETH on Base | Suggest bridging or swapping |
-| EVM_PRIVATE_KEY not set | Show setup instructions before launching |
-| User asks about other strategies (funding rate, sUSDe loop) | These are not yet built-in — guide user through the steps using individual `plugin-store` commands (`plugin-store aave`, `plugin-store hyperliquid`, `plugin-store ethena`) |
+| onchainos wallet not logged in | Show `onchainos wallet login` instructions before launching |
+| User asks about other strategies (funding rate, sUSDe loop) | These are not yet built-in — guide user through the steps using individual `plugin-store` commands (`plugin-store aave`, `plugin-store ethena`) |
 | Aave 利差为负 (borrow > supply) | Strategy C 不可执行，建议策略 A 或等待利率回归 |
 | 健康因子过低 | 策略 C 循环时自动停止（HF < 1.30），提醒用户去杠杆 |
+| User just installed plugin-store with no follow-up | Show Post-Install Welcome listing all skills |
+| User asks "你能做什么" / "what can you do" / "有什么 skill" | Show Post-Install Welcome listing all skills |
 | User asks about a specific dApp platform | Route to the corresponding `plugin-store <dapp>` command directly |
 | User asks "支持哪些平台/协议" | Show the dApp platform table |
 | User says "哪个更好" | Use the comparison table; recommend A for conservative, D/E/F for aggressive Meme 玩家 |
@@ -805,5 +1042,192 @@ TELEGRAM_CHAT_ID=...
 | User has large capital (>$10k) | Recommend A on Ethereum (higher TVL, deeper liquidity) |
 | User asks about Solana Meme 策略 | Show D/E/F options, explain each strategy's signal source differs |
 | plugin-store 未安装 | 引导安装: `curl -sSL .../install.sh \| sh` |
-| SOL_PRIVATE_KEY not set | Show setup instructions, warn about Meme 币高风险 |
+| onchainos wallet not logged in (Solana) | Show `onchainos wallet login` instructions, warn about Meme 币高风险 |
 | User asks "哪个 Solana 策略更好" | D 最稳（榜单动量）、E 最聪明（跟单）、F 最激进（Pump.fun），建议小额分散测试 |
+
+---
+
+# dApp CLI References (Built-in)
+
+The following dApp commands are all available via the `plugin-store` binary after running the Pre-flight Check above.
+
+---
+
+## [Aave V3 CLI Reference]
+
+7 commands for lending market data, reserve details, account positions, supply/withdraw, and borrow/repay operations.
+
+### Authentication
+
+- **Data commands** (`markets`, `reserve`, `account`): No auth needed.
+- **Transaction commands** (`supply`, `withdraw`, `borrow`, `repay`): Require onchainos wallet login (`onchainos wallet login`).
+
+### Command Index
+
+| # | Command | Auth | Description |
+|---|---------|------|-------------|
+| 1 | `plugin-store aave markets --chain <chain>` | No | List all Aave V3 reserve markets |
+| 2 | `plugin-store aave reserve <symbol> --chain <chain>` | No | Get reserve APY, liquidity, config |
+| 3 | `plugin-store aave account <address> --chain <chain>` | No | View positions, health factor, borrowing power |
+| 4 | `plugin-store aave supply --token <symbol> --amount <n> --chain <chain>` | Yes | Supply assets to earn yield |
+| 5 | `plugin-store aave withdraw --token <symbol> --amount <n\|max> --chain <chain>` | Yes | Withdraw supplied assets |
+| 6 | `plugin-store aave borrow --token <symbol> --amount <n> --chain <chain>` | Yes | Borrow against collateral |
+| 7 | `plugin-store aave repay --token <symbol> --amount <n\|max> --chain <chain>` | Yes | Repay borrowed assets |
+
+**Supported chains:** ethereum, polygon, arbitrum, base
+
+### Key Concepts
+
+- **Health Factor**: Must stay > 1.0 or position is liquidatable. Recommended > 1.5.
+- **aTokens**: Receipt tokens received when supplying (e.g. supply USDC → receive aUSDC). Balance grows automatically.
+- **LTV**: Max borrow value as % of collateral value (e.g. 80% LTV = borrow up to 80% of collateral).
+- **Use `max`** for full withdrawal or full repayment.
+
+### Quickstart
+
+```bash
+plugin-store aave markets --chain ethereum
+plugin-store aave reserve USDC --chain ethereum
+plugin-store aave account 0xYourAddress --chain ethereum
+plugin-store aave supply --token USDC --amount 100 --chain ethereum
+plugin-store aave withdraw --token USDC --amount max --chain ethereum
+plugin-store aave borrow --token USDC --amount 500 --chain ethereum
+plugin-store aave repay --token USDC --amount max --chain ethereum
+```
+
+### Edge Cases
+
+- Health factor risk: warn if resulting HF < 1.5 after withdraw/borrow.
+- First-time supply requires ERC-20 approval (handled automatically, extra gas).
+- Use `--amount max` to repay full debt including accrued interest.
+- Unsupported chain → error listing supported chains.
+
+---
+
+## [Morpho CLI Reference]
+
+5 commands for Morpho Blue lending markets, MetaMorpho vaults, and user positions.
+
+### Authentication
+
+- **All query commands** (`markets`, `market`, `vaults`, `vault`, `positions`): No auth needed.
+- **On-chain vault operations** (deposit/withdraw): Require onchainos wallet login (`onchainos wallet login`).
+
+### Command Index
+
+| # | Command | Auth | Description |
+|---|---------|------|-------------|
+| 1 | `plugin-store morpho markets [--chain <chain>] [--order-by <field>] [--direction <dir>]` | No | List Morpho Blue markets with APY and TVL |
+| 2 | `plugin-store morpho market <unique_key> [--chain-id <id>]` | No | Get detailed market data |
+| 3 | `plugin-store morpho vaults [--chain <chain>] [--order-by <field>] [--direction <dir>]` | No | List MetaMorpho vaults |
+| 4 | `plugin-store morpho vault <address> [--chain-id <id>]` | No | Get detailed vault data |
+| 5 | `plugin-store morpho positions <address> [--chain <chain>]` | No | View wallet positions |
+
+**Supported chains:** ethereum, base, arbitrum, optimism, polygon  
+**Chain IDs:** 1=Ethereum, 8453=Base, 42161=Arbitrum, 10=Optimism, 137=Polygon  
+**Order-by (markets):** SupplyAssetsUsd, BorrowAssetsUsd, Utilization, SupplyApy, BorrowApy  
+**Order-by (vaults):** TotalAssetsUsd, TotalAssets, Apy, NetApy, Name
+
+### Key Concepts
+
+- **Morpho Blue**: Permissionless isolated lending markets — each market has its own params, no shared risk.
+- **MetaMorpho Vaults**: ERC-4626 vaults aggregating deposits across multiple markets, managed by curators.
+- **Net APY vs Gross APY**: Net APY subtracts the vault's performance fee. Always compare using Net APY.
+- **Unique Key**: 32-byte hex identifying a Morpho Blue market — use for `market` command.
+
+### Quickstart
+
+```bash
+plugin-store morpho markets --chain base --order-by SupplyApy --direction Desc
+plugin-store morpho market 0xb323...86cc --chain-id 1
+plugin-store morpho vaults --chain ethereum --order-by NetApy --direction Desc
+plugin-store morpho vault 0xBEEF...F378 --chain-id 1
+plugin-store morpho positions 0xYourAddress --chain base
+```
+
+---
+
+## [Uniswap CLI Reference]
+
+3 commands for swap quotes, swap execution, and token lookup on Uniswap V3.
+
+### Authentication
+
+- **`tokens`**: No auth needed.
+- **`quote`**: Requires onchainos wallet login (reads on-chain QuoterV2 contract — no gas spent).
+- **`swap`**: Requires onchainos wallet login (signs and broadcasts transaction).
+
+### Command Index
+
+| # | Command | Auth | Description |
+|---|---------|------|-------------|
+| 1 | `plugin-store uniswap quote --from <token> --to <token> --amount <n> [--chain <chain>] [--fee <bps>]` | Yes* | Get estimated swap output without executing |
+| 2 | `plugin-store uniswap swap --from <token> --to <token> --amount <n> [--chain <chain>] [--fee <bps>] [--slippage <bps>]` | Yes | Execute on-chain swap |
+| 3 | `plugin-store uniswap tokens [--chain <chain>]` | No | List well-known token symbols and addresses |
+
+**Supported chains:** arbitrum (default), ethereum, polygon  
+**Fee tiers:** 100 (0.01%), 500 (0.05%), 3000 (0.3%), 10000 (1%)  
+**Default slippage:** 50 bps (0.5%)
+
+### Available Tokens
+
+| Chain | Tokens |
+|---|---|
+| Arbitrum | WETH, USDC, USDC.e, USDT, wstETH, weETH, WBTC, ARB |
+| Ethereum | WETH, USDC, USDT, wstETH, weETH, WBTC, DAI, sUSDe, USDe |
+| Polygon | WETH, USDC, USDT, WMATIC, wstETH |
+
+### Key Concepts
+
+- **Fee Tiers**: Correlated pairs (WETH/wstETH) use 100 bps; standard pairs (WETH/USDC) use 3000 bps.
+- **Slippage**: Default 50 bps. For large/illiquid swaps, use `--slippage 100` or higher.
+- **ERC-20 Approval**: First swap of a token requires approval (auto-handled, extra gas).
+- **Unknown token**: Use contract address `0x...` directly if symbol not in well-known list.
+
+### Quickstart
+
+```bash
+plugin-store uniswap tokens --chain arbitrum
+plugin-store uniswap quote --from WETH --to wstETH --amount 0.05
+plugin-store uniswap swap --from WETH --to wstETH --amount 0.05
+plugin-store uniswap swap --from USDC --to WETH --amount 100 --chain ethereum --fee 3000
+```
+
+---
+
+## [Ethena CLI Reference]
+
+5 commands for sUSDe yield-bearing stablecoin on Ethereum mainnet.
+
+### Authentication
+
+- **`apy`, `balance`**: No auth needed.
+- **`stake`, `cooldown`, `unstake`**: Require onchainos wallet login (Ethereum mainnet, ETH for gas).
+
+### Command Index
+
+| # | Command | Auth | Description |
+|---|---------|------|-------------|
+| 1 | `plugin-store ethena apy` | No | sUSDe exchange rate, total assets, cooldown duration |
+| 2 | `plugin-store ethena balance <address>` | No | USDe and sUSDe balances for a wallet |
+| 3 | `plugin-store ethena stake --amount <n>` | Yes | Deposit USDe → receive sUSDe shares |
+| 4 | `plugin-store ethena cooldown --amount <n>` | Yes | Initiate 7-day unstake cooldown (amount in USDe terms) |
+| 5 | `plugin-store ethena unstake` | Yes | Withdraw USDe after cooldown completes |
+
+### Key Concepts
+
+- **Exchange Rate**: 1 sUSDe = X USDe (grows over time as yield accrues).
+- **Cooldown Period**: 7 days. Must call `cooldown` first, wait 7 days, then call `unstake`.
+- **Yield Source**: Ethena delta-neutral strategy (spot ETH + short perp) distributes funding income to sUSDe holders. APY ~8–15% historically.
+- **sUSDe on L2**: Can buy sUSDe on L2 DEXes (cheaper gas), but staking/unstaking only on Ethereum mainnet.
+
+### Quickstart
+
+```bash
+plugin-store ethena apy
+plugin-store ethena balance 0xYourAddress
+plugin-store ethena stake --amount 1000
+plugin-store ethena cooldown --amount 500
+plugin-store ethena unstake
+```
+

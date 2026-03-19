@@ -167,7 +167,7 @@ async fn cmd_tick(notifier: &Notifier) -> Result<()> {
     }
 
     // 7. Detect grid crossing
-    let grid = state.grid.as_ref().unwrap();
+    let grid = state.grid.as_ref().context("grid not calibrated")?;
     let new_level = engine::price_to_level(price, grid);
     let current_level = state.current_level.unwrap_or(new_level);
 
@@ -237,11 +237,18 @@ async fn cmd_tick(notifier: &Notifier) -> Result<()> {
     let raw_amount = match direction {
         "BUY" => {
             // USDC amount in 6 decimals
-            alloy::primitives::U256::from((trade_amount.amount_token * 1_000_000.0) as u64)
+            let units = trade_amount.amount_token * 1_000_000.0;
+            if units < 0.0 || units > u64::MAX as f64 {
+                bail!("USDC amount out of range: {}", trade_amount.amount_token);
+            }
+            alloy::primitives::U256::from(units as u64)
         }
         "SELL" => {
             // ETH amount in wei (18 decimals)
             let wei = trade_amount.amount_token * 1e18;
+            if wei < 0.0 || wei > u128::MAX as f64 {
+                bail!("ETH amount out of range: {}", trade_amount.amount_token);
+            }
             alloy::primitives::U256::from(wei as u128)
         }
         _ => unreachable!(),
@@ -315,7 +322,7 @@ async fn cmd_tick(notifier: &Notifier) -> Result<()> {
             }));
         }
         Ok(ref sr) => {
-            let failure = sr.failure.as_ref().unwrap();
+            let failure = sr.failure.as_ref().context("swap failed but no failure details")?;
             record_failure(
                 &mut state,
                 direction,

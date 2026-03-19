@@ -28,7 +28,7 @@ pub enum AaveCommand {
         #[arg(long, default_value = "ethereum")]
         chain: String,
     },
-    /// Supply an asset to Aave V3 (requires EVM_PRIVATE_KEY)
+    /// Supply an asset to Aave V3 (requires onchainos wallet login)
     Supply {
         /// Token symbol (e.g. WETH, USDC, DAI)
         #[arg(long)]
@@ -40,7 +40,7 @@ pub enum AaveCommand {
         #[arg(long, default_value = "ethereum")]
         chain: String,
     },
-    /// Withdraw an asset from Aave V3 (requires EVM_PRIVATE_KEY)
+    /// Withdraw an asset from Aave V3 (requires onchainos wallet login)
     Withdraw {
         /// Token symbol (e.g. WETH, USDC, DAI)
         #[arg(long)]
@@ -52,7 +52,7 @@ pub enum AaveCommand {
         #[arg(long, default_value = "ethereum")]
         chain: String,
     },
-    /// Borrow an asset from Aave V3 at variable rate (requires EVM_PRIVATE_KEY)
+    /// Borrow an asset from Aave V3 at variable rate (requires onchainos wallet login)
     Borrow {
         /// Token symbol (e.g. WETH, USDC, DAI)
         #[arg(long)]
@@ -64,7 +64,7 @@ pub enum AaveCommand {
         #[arg(long, default_value = "ethereum")]
         chain: String,
     },
-    /// Repay a borrowed asset to Aave V3 (requires EVM_PRIVATE_KEY)
+    /// Repay a borrowed asset to Aave V3 (requires onchainos wallet login)
     Repay {
         /// Token symbol (e.g. WETH, USDC, DAI)
         #[arg(long)]
@@ -128,7 +128,7 @@ async fn cmd_reserve(symbol: &str, chain: &str) -> Result<()> {
 }
 
 async fn cmd_supply(token: &str, amount: &str, chain: &str) -> Result<()> {
-    let client = AaveClient::new_with_signer(chain)?;
+    let client = AaveClient::new_with_onchainos(chain)?;
     let (asset, decimals) = client.resolve_asset(token).await?;
     let amount_u256 = parse_token_amount(amount, decimals)?;
     let data = client.supply(asset, amount_u256, decimals).await?;
@@ -137,7 +137,7 @@ async fn cmd_supply(token: &str, amount: &str, chain: &str) -> Result<()> {
 }
 
 async fn cmd_withdraw(token: &str, amount: &str, chain: &str) -> Result<()> {
-    let client = AaveClient::new_with_signer(chain)?;
+    let client = AaveClient::new_with_onchainos(chain)?;
     let (asset, decimals) = client.resolve_asset(token).await?;
     let amount_u256 = if amount == "max" {
         alloy::primitives::U256::MAX
@@ -150,7 +150,7 @@ async fn cmd_withdraw(token: &str, amount: &str, chain: &str) -> Result<()> {
 }
 
 async fn cmd_borrow(token: &str, amount: &str, chain: &str) -> Result<()> {
-    let client = AaveClient::new_with_signer(chain)?;
+    let client = AaveClient::new_with_onchainos(chain)?;
     let (asset, decimals) = client.resolve_asset(token).await?;
     let amount_u256 = parse_token_amount(amount, decimals)?;
     let data = client.borrow(asset, amount_u256, decimals).await?;
@@ -159,7 +159,7 @@ async fn cmd_borrow(token: &str, amount: &str, chain: &str) -> Result<()> {
 }
 
 async fn cmd_repay(token: &str, amount: &str, chain: &str) -> Result<()> {
-    let client = AaveClient::new_with_signer(chain)?;
+    let client = AaveClient::new_with_onchainos(chain)?;
     let (asset, decimals) = client.resolve_asset(token).await?;
     let amount_u256 = if amount == "max" {
         alloy::primitives::U256::MAX

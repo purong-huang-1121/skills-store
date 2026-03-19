@@ -64,14 +64,10 @@ fn aave_account_invalid_address() {
     assert_eq!(json["ok"], serde_json::Value::Bool(false));
 }
 
-// ─── supply/withdraw (require EVM_PRIVATE_KEY) ──────────────────────
+// ─── supply/withdraw (require onchainos wallet login) ──────────────────────
 
 #[test]
-fn aave_supply_missing_private_key_fails() {
-    if std::env::var("EVM_PRIVATE_KEY").is_ok() {
-        eprintln!("SKIP: EVM_PRIVATE_KEY is set");
-        return;
-    }
+fn aave_supply_missing_wallet_fails() {
     let output = plugin_store()
         .args([
             "aave", "supply", "--token", "USDC", "--amount", "100", "--chain", "ethereum",
@@ -82,11 +78,8 @@ fn aave_supply_missing_private_key_fails() {
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap_or_default();
     assert_eq!(json["ok"], serde_json::Value::Bool(false));
     assert!(
-        json["error"]
-            .as_str()
-            .unwrap_or("")
-            .contains("EVM_PRIVATE_KEY"),
-        "expected error about missing key: {json}"
+        !json["error"].as_str().unwrap_or("").is_empty(),
+        "expected error message: {json}"
     );
 }
 

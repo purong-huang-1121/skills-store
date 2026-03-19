@@ -1,12 +1,32 @@
 [package]
 name = "plugin-store-cli"
-version = "1.0.0"
+version = "1.0.22"
 edition = "2021"
 rust-version = "1.75"
 
 [[bin]]
 name = "plugin-store"
 path = "src/main.rs"
+
+[[bin]]
+name = "strategy-auto-rebalance"
+path = "src/bin/strategy_auto_rebalance.rs"
+
+[[bin]]
+name = "strategy-grid"
+path = "src/bin/strategy_grid.rs"
+
+[[bin]]
+name = "strategy-memepump-scanner"
+path = "src/bin/strategy_memepump_scanner.rs"
+
+[[bin]]
+name = "strategy-ranking-sniper"
+path = "src/bin/strategy_ranking_sniper.rs"
+
+[[bin]]
+name = "strategy-signal-tracker"
+path = "src/bin/strategy_signal_tracker.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -18,44 +38,14 @@ reqwest = { version = "0.12", default-features = false, features = [
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 anyhow = "1"
-dotenvy = "0.15"
 dirs = "6"
-rpassword = "7"
 tabled = "0.17"
-hmac = "0.12"
-sha2 = "0.10"
-base64 = "0.22"
 chrono = { version = "0.4", features = ["clock"] }
 
-# Encryption
-aes-gcm = "0.10"
-scrypt = "0.11"
-rand = "0.8"
-zeroize = "1"
-
-# HD derivation + signing
-bip39 = "2.1"
-coins-bip32 = "0.13"
-k256 = { version = "0.13", features = ["ecdsa"] }
-ed25519-dalek = "2"
-tiny-keccak = { version = "2", features = ["keccak"] }
-bs58 = "0.5"
-
-# EVM transaction building
-alloy-consensus = "1"
-alloy-signer-local = "1"
+# EVM on-chain interaction (read-only + onchainos-signed tx)
 alloy-primitives = "1"
-alloy-rlp = "0.3"
 alloy-network = "1"
-
-# Aave V3 on-chain interaction
-alloy = { version = "1", features = ["provider-http", "signer-local", "sol-types", "contract", "rpc-types"] }
-
-# Msgpack (for Hyperliquid action serialisation)
-rmp-serde = "1"
-
-# RSA-PSS signing (for Kalshi authentication)
-rsa = { version = "0.9", features = ["sha2"] }
+alloy = { version = "1", features = ["provider-http", "sol-types", "contract", "rpc-types"] }
 
 # Process management (grid bot PID/signal)
 libc = "0.2"

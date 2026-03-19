@@ -78,7 +78,7 @@ pub async fn execute(cmd: AutoRebalanceCommand) -> Result<()> {
                 );
             }
 
-            // Derive wallet address from EVM_PRIVATE_KEY
+            // Derive wallet address from onchainos wallet
             let wallet_address = derive_wallet_address()?;
 
             // Resolve Telegram config
@@ -232,13 +232,8 @@ async fn cmd_set(key: &str, value: &str) -> Result<()> {
     Ok(())
 }
 
-/// Derive wallet address from EVM_PRIVATE_KEY env var.
+/// Derive wallet address from onchainos wallet.
 fn derive_wallet_address() -> Result<String> {
-    use alloy::signers::local::PrivateKeySigner;
-
-    let pk = std::env::var("EVM_PRIVATE_KEY")
-        .context("EVM_PRIVATE_KEY not set — required for auto-rebalance")?;
-    let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-    let signer: PrivateKeySigner = pk.parse().context("invalid EVM_PRIVATE_KEY")?;
-    Ok(format!("{:#x}", signer.address()))
+    crate::onchainos::get_evm_address()
+        .context("onchainos wallet not available — please login first")
 }

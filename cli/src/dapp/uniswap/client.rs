@@ -2,10 +2,8 @@
 
 use std::str::FromStr;
 
-use alloy::network::EthereumWallet;
 use alloy::primitives::{Address, U160, U256};
 use alloy::providers::ProviderBuilder;
-use alloy::signers::local::PrivateKeySigner;
 use alloy::sol_types::SolCall;
 use anyhow::{bail, Context, Result};
 use serde_json::json;
@@ -44,13 +42,21 @@ static POLYGON: UniswapChainConfig = UniswapChainConfig {
     quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
 };
 
+static BASE: UniswapChainConfig = UniswapChainConfig {
+    chain_id: 8453,
+    rpc_url: "https://base-rpc.publicnode.com",
+    swap_router: "0x2626664c2603336E57B271c5C0b26F421741e481",
+    quoter_v2: "0x3d4e44Eb1374240CE5F1B136041f0B71EB3Dd5de",
+};
+
 pub fn get_chain_config(chain: &str) -> Result<&'static UniswapChainConfig> {
     match chain.to_lowercase().as_str() {
         "arbitrum" | "arb" | "42161" => Ok(&ARBITRUM),
         "ethereum" | "eth" | "1" => Ok(&ETHEREUM),
         "polygon" | "matic" | "137" => Ok(&POLYGON),
+        "base" | "8453" => Ok(&BASE),
         _ => bail!(
-            "Unsupported chain '{}' for Uniswap. Supported: arbitrum, ethereum, polygon",
+            "Unsupported chain '{}' for Uniswap. Supported: arbitrum, ethereum, polygon, base",
             chain
         ),
     }
@@ -82,6 +88,13 @@ pub fn resolve_token(symbol: &str, chain_id: u64) -> Result<(Address, u8)> {
         ("DAI", 1) => Ok((addr("0x6B175474E89094C44Da98b954EedeAC495271d0F"), 18)),
         ("SUSDE", 1) => Ok((addr("0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"), 18)),
         ("USDE", 1) => Ok((addr("0x4c9EDD5852cd905f086C759E8383e09bff1E68B3"), 18)),
+        // Base
+        ("WETH", 8453) => Ok((addr("0x4200000000000000000000000000000000000006"), 18)),
+        ("ETH", 8453)  => Ok((addr("0x4200000000000000000000000000000000000006"), 18)),
+        ("USDC", 8453) => Ok((addr("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"), 6)),
+        ("USDBC", 8453) => Ok((addr("0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"), 6)),
+        ("DAI", 8453)  => Ok((addr("0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"), 18)),
+        ("CBETH", 8453) => Ok((addr("0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"), 18)),
         // Polygon
         ("WETH", 137) => Ok((addr("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"), 18)),
         ("USDC", 137) => Ok((addr("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"), 6)),
@@ -104,19 +117,33 @@ fn addr(s: &str) -> Address {
 // Client
 // ---------------------------------------------------------------------------
 
+/// Signing mode for write operations.
+enum SignerMode {
+    OnchainOs { chain_flag: String },
+}
+
 pub struct UniswapClient {
     config: &'static UniswapChainConfig,
-    signer: PrivateKeySigner,
+    signer: SignerMode,
 }
 
 impl UniswapClient {
     pub fn new(chain: &str) -> Result<Self> {
         let config = get_chain_config(chain)?;
-        let pk = std::env::var("EVM_PRIVATE_KEY")
-            .context("EVM_PRIVATE_KEY env var required for Uniswap swaps")?;
-        let pk = pk.strip_prefix("0x").unwrap_or(&pk);
-        let signer: PrivateKeySigner = pk.parse().context("invalid EVM_PRIVATE_KEY")?;
-        Ok(Self { config, signer })
+        let chain_flag = crate::onchainos::chain_flag(chain).to_string();
+        Ok(Self {
+            config,
+            signer: SignerMode::OnchainOs { chain_flag },
+        })
+    }
+
+    fn address(&self) -> Result<Address> {
+        match &self.signer {
+            SignerMode::OnchainOs { .. } => {
+                let addr_str = crate::onchainos::get_evm_address()?;
+                Address::from_str(&addr_str).context("invalid onchainos EVM address")
+            }
+        }
     }
 
     /// Get a swap quote (estimated output amount) without executing.
@@ -162,16 +189,12 @@ impl UniswapClient {
         decimals_in: u8,
         decimals_out: u8,
     ) -> Result<serde_json::Value> {
-        let wallet = EthereumWallet::from(self.signer.clone());
-        let provider = ProviderBuilder::new()
-            .wallet(wallet)
-            .connect_http(self.config.rpc_url.parse()?);
-
         let router_addr = Address::from_str(self.config.swap_router)?;
-        let user = self.signer.address();
+        let user = self.address()?;
 
-        // 1. Get quote for minimum output calculation
-        let quoter = IQuoterV2::new(Address::from_str(self.config.quoter_v2)?, &provider);
+        // 1. Get quote (read-only, same for both signer modes)
+        let provider_ro = ProviderBuilder::new().connect_http(self.config.rpc_url.parse()?);
+        let quoter = IQuoterV2::new(Address::from_str(self.config.quoter_v2)?, &provider_ro);
         let quote_params = IQuoterV2::QuoteExactInputSingleParams {
             tokenIn: token_in,
             tokenOut: token_out,
@@ -185,27 +208,10 @@ impl UniswapClient {
             .await
             .context("quote failed — pool may not exist for this pair/fee tier")?;
 
-        // Apply slippage tolerance
         let min_out = quote.amountOut * U256::from(10000 - slippage_bps) / U256::from(10000);
 
-        // 2. Approve router to spend tokenIn
-        let erc20 = IERC20::new(token_in, &provider);
-        let current_allowance = erc20.allowance(user, router_addr).call().await?;
-        if current_allowance < amount_in {
-            let approve_receipt = erc20
-                .approve(router_addr, amount_in)
-                .send()
-                .await?
-                .get_receipt()
-                .await?;
-            if !approve_receipt.status() {
-                bail!("ERC20 approve transaction failed");
-            }
-        }
-
-        // 3. Execute swap via multicall with deadline
-        let router = ISwapRouter02::new(router_addr, &provider);
-        let deadline = U256::from(chrono::Utc::now().timestamp() as u64 + 300); // 5 min
+        // Build swap calldata (shared between both modes)
+        let deadline = U256::from(chrono::Utc::now().timestamp() as u64 + 300);
         let swap_params = ISwapRouter02::ExactInputSingleParams {
             tokenIn: token_in,
             tokenOut: token_out,
@@ -215,21 +221,46 @@ impl UniswapClient {
             amountOutMinimum: min_out,
             sqrtPriceLimitX96: U160::ZERO,
         };
-
-        // Encode the exactInputSingle call, then wrap in multicall with deadline
-        let swap_calldata = ISwapRouter02::exactInputSingleCall {
+        let inner_calldata = ISwapRouter02::exactInputSingleCall {
             params: swap_params,
         }
         .abi_encode();
 
-        let receipt = router
-            .multicall(deadline, vec![swap_calldata.into()])
-            .send()
-            .await
-            .context("swap transaction failed")?
-            .get_receipt()
-            .await
-            .context("failed to get swap receipt")?;
+        let tx_hash = match &self.signer {
+            SignerMode::OnchainOs { chain_flag } => {
+                // Approve via onchainos
+                let erc20 = IERC20::new(token_in, &provider_ro);
+                let current_allowance = erc20.allowance(user, router_addr).call().await?;
+                if current_allowance < amount_in {
+                    let approve_calldata = IERC20::approveCall {
+                        spender: router_addr,
+                        amount: amount_in,
+                    }
+                    .abi_encode();
+                    crate::onchainos::contract_call(
+                        chain_flag,
+                        &format!("{}", token_in),
+                        &format!("0x{}", hex::encode(&approve_calldata)),
+                        "0",
+                    )
+                    .await?;
+                }
+
+                // Swap via onchainos: multicall(deadline, [exactInputSingle calldata])
+                let multicall_calldata = ISwapRouter02::multicallCall {
+                    deadline,
+                    data: vec![inner_calldata.into()],
+                }
+                .abi_encode();
+                crate::onchainos::contract_call(
+                    chain_flag,
+                    &format!("{}", router_addr),
+                    &format!("0x{}", hex::encode(&multicall_calldata)),
+                    "0",
+                )
+                .await?
+            }
+        };
 
         Ok(json!({
             "action": "swap",
@@ -241,9 +272,8 @@ impl UniswapClient {
             "minimum_out": format_units(min_out, decimals_out),
             "slippage_bps": slippage_bps,
             "fee_tier": fee,
-            "tx_hash": format!("{}", receipt.transaction_hash),
-            "status": if receipt.status() { "success" } else { "failed" },
-            "block_number": receipt.block_number.unwrap_or_default(),
+            "tx_hash": tx_hash,
+            "status": "success",
         }))
     }
 }

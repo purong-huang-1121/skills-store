@@ -18,6 +18,9 @@ pub enum SignalTrackerCommand {
         /// Simulate without executing swaps
         #[arg(long)]
         dry_run: bool,
+        /// Quick test: buy ~$0.01 worth of this token, then sell back immediately.
+        #[arg(long)]
+        token: Option<String>,
     },
     /// Start the bot in foreground (tick every 20 seconds)
     Start {
@@ -45,6 +48,8 @@ pub enum SignalTrackerCommand {
     },
     /// Market analysis (current signals, wallet types)
     Analyze,
+    /// Show wallet SOL balance
+    Balance,
     /// Show all strategy parameters and file paths
     Config,
     /// Set a config parameter (e.g. signal-tracker set max_positions 8)
@@ -59,7 +64,12 @@ pub enum SignalTrackerCommand {
 pub async fn execute(cmd: SignalTrackerCommand) -> Result<()> {
     let notifier = Notifier::from_env("📡 Signal Tracker");
     match cmd {
-        SignalTrackerCommand::Tick { dry_run } => cmd_tick(dry_run, &notifier).await,
+        SignalTrackerCommand::Tick { dry_run, token } => {
+            if let Some(token_addr) = token {
+                return cmd_quick_test(&token_addr).await;
+            }
+            cmd_tick(dry_run, &notifier).await
+        }
         SignalTrackerCommand::Start { dry_run } => cmd_start(dry_run, &notifier).await,
         SignalTrackerCommand::Stop => cmd_stop().await,
         SignalTrackerCommand::Status => cmd_status().await,
@@ -67,6 +77,7 @@ pub async fn execute(cmd: SignalTrackerCommand) -> Result<()> {
         SignalTrackerCommand::History { limit } => cmd_history(limit).await,
         SignalTrackerCommand::Reset { force } => cmd_reset(force).await,
         SignalTrackerCommand::Analyze => cmd_analyze().await,
+        SignalTrackerCommand::Balance => cmd_balance().await,
         SignalTrackerCommand::Config => cmd_config().await,
         SignalTrackerCommand::Set { key, value } => cmd_set(&key, &value).await,
     }
@@ -558,6 +569,26 @@ async fn cmd_tick(dry_run: bool, notifier: &Notifier) -> Result<()> {
         "cumulative_loss_sol": state.stats.cumulative_loss_sol,
         "actions": actions,
         "dry_run": dry_run,
+    }));
+    Ok(())
+}
+
+// ── balance ───────────────────────────────────────────────────────────
+
+async fn cmd_balance() -> Result<()> {
+    let client = SignalClient::new_read_only()?;
+    let wallet = crate::onchainos::get_sol_address().unwrap_or_default();
+    let sol = client.fetch_sol_balance().await?;
+    let hint = if sol < 0.1 {
+        format!("余额不足，建议充值至少 0.1 SOL（当前 {:.4} SOL）", sol)
+    } else {
+        format!("{:.4} SOL 可用", sol)
+    };
+    output::success(serde_json::json!({
+        "wallet": wallet,
+        "sol_balance": sol,
+        "sufficient": sol >= 0.1,
+        "hint": hint,
     }));
     Ok(())
 }
@@ -1119,6 +1150,104 @@ async fn cmd_analyze() -> Result<()> {
         "active_positions": state.positions.len(),
         "session_pnl_sol": state.stats.session_pnl_sol,
         "consecutive_losses": state.stats.consecutive_losses,
+    }));
+    Ok(())
+}
+
+// ── quick test ───────────────────────────────────────────────────────
+
+async fn cmd_quick_test(token_addr: &str) -> Result<()> {
+    let client = SignalClient::new()?;
+
+    // Get SOL price to calculate ~$0.01 worth
+    let sol_price = match crate::onchainos::swap_quote(
+        "11111111111111111111111111111111",
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+        "1000000000", // 1 SOL
+        "solana",
+        None,
+    ) {
+        Ok(data) => {
+            let item = if data.is_array() { data[0].clone() } else { data };
+            item["toTokenAmount"]
+                .as_str()
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(100_000_000.0) // fallback ~$100
+                / 1_000_000.0 // USDC 6 decimals
+        }
+        Err(_) => 100.0, // fallback
+    };
+
+    // $0.01 worth of SOL in lamports
+    let sol_amount = 0.01 / sol_price;
+    let lamports = (sol_amount * 1e9) as u64;
+    // Minimum 100_000 lamports (0.0001 SOL) to avoid dust
+    let lamports = lamports.max(100_000);
+
+    eprintln!(
+        "[quick-test] SOL price: ${:.2} | Buying ${:.4} worth ({} lamports)",
+        sol_price,
+        lamports as f64 / 1e9 * sol_price,
+        lamports
+    );
+
+    // Buy
+    let buy_result = client
+        .buy_token(token_addr, lamports as f64 / 1e9)
+        .await?;
+    let buy_tx = buy_result.tx_hash.clone().unwrap_or_default();
+    eprintln!("[quick-test] BUY tx: {}", buy_tx);
+
+    // Wait for settlement
+    eprintln!("[quick-test] Waiting 8s...");
+    tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+
+    // Query actual token balance
+    let sell_amount = match crate::onchainos::portfolio_all_balances(&client.wallet, "501") {
+        Ok(data) => {
+            let assets = data
+                .as_array()
+                .and_then(|arr| arr.first())
+                .and_then(|item| item["tokenAssets"].as_array())
+                .cloned()
+                .unwrap_or_default();
+            assets
+                .iter()
+                .find(|a| {
+                    a["tokenContractAddress"]
+                        .as_str()
+                        .unwrap_or("")
+                        .eq_ignore_ascii_case(token_addr)
+                })
+                .and_then(|a| a["rawBalance"].as_str().map(|s| s.to_string()))
+                .unwrap_or_default()
+        }
+        Err(_) => String::new(),
+    };
+
+    if sell_amount.is_empty() || sell_amount == "0" {
+        eprintln!("[quick-test] No token balance found, skipping sell");
+        output::success(json!({
+            "action": "quick_test",
+            "token": token_addr,
+            "buy_tx": buy_tx,
+            "sell_tx": null,
+            "note": "buy succeeded but no balance found for sell"
+        }));
+        return Ok(());
+    }
+
+    eprintln!("[quick-test] Selling back (amount_raw: {sell_amount})...");
+    let sell_result = client.sell_token(token_addr, &sell_amount).await?;
+    let sell_tx = sell_result.tx_hash.clone().unwrap_or_default();
+
+    output::success(json!({
+        "action": "quick_test",
+        "token": token_addr,
+        "buy_tx": buy_tx,
+        "sell_tx": sell_tx,
+        "buy_lamports": lamports,
+        "sell_amount_raw": sell_amount,
     }));
     Ok(())
 }

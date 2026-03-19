@@ -8,13 +8,13 @@ set -e
 #   sh install-local.sh
 #
 # What it does:
-#   1. Copy the binary from the script's directory to ~/.cargo/bin/
+#   1. Copy the binary from the script's directory to ~/.local/bin/
 #   2. Make it executable, remove macOS quarantine flag
-#   3. Add ~/.cargo/bin to PATH if needed
+#   3. Add ~/.local/bin to PATH if needed
 # ──────────────────────────────────────────────────────────────
 
 BINARY="plugin-store"
-INSTALL_DIR="$HOME/.cargo/bin"
+INSTALL_DIR="$HOME/.local/bin"
 
 # Resolve script directory (where the binary should be)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -41,7 +41,7 @@ fi
 ver=$("$INSTALL_DIR/$BINARY" --version 2>/dev/null || echo "unknown")
 echo "Installed: $ver → $INSTALL_DIR/$BINARY"
 
-# Ensure ~/.cargo/bin is in PATH
+# Ensure ~/.local/bin is in PATH
 case ":$PATH:" in
   *":$INSTALL_DIR:"*) ;;
   *)
@@ -55,12 +55,12 @@ case ":$PATH:" in
       *)    profile="$HOME/.profile" ;;
     esac
 
-    if [ -f "$profile" ] && grep -qF '$HOME/.cargo/bin' "$profile" 2>/dev/null; then
+    if [ -f "$profile" ] && grep -qF '$HOME/.local/bin' "$profile" 2>/dev/null; then
       : # already in profile
     else
       echo "" >> "$profile"
       echo "# Added by plugin-store installer" >> "$profile"
-      echo "export PATH=\"\$HOME/.cargo/bin:\$PATH\"" >> "$profile"
+      echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$profile"
       echo "Added $INSTALL_DIR to PATH in $profile"
     fi
 

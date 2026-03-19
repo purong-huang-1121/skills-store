@@ -13,19 +13,19 @@ pub enum EthenaCommand {
         /// Wallet address
         address: String,
     },
-    /// Stake USDe → sUSDe (requires EVM_PRIVATE_KEY)
+    /// Stake USDe → sUSDe (requires onchainos wallet login)
     Stake {
         /// Amount of USDe to stake (e.g. "100.5")
         #[arg(long)]
         amount: String,
     },
-    /// Initiate unstake cooldown (requires EVM_PRIVATE_KEY)
+    /// Initiate unstake cooldown (requires onchainos wallet login)
     Cooldown {
         /// Amount of USDe to unstake (e.g. "100.5")
         #[arg(long)]
         amount: String,
     },
-    /// Withdraw USDe after cooldown period has elapsed (requires EVM_PRIVATE_KEY)
+    /// Withdraw USDe after cooldown period has elapsed (requires onchainos wallet login)
     Unstake,
 }
 
@@ -54,7 +54,7 @@ async fn cmd_balance(address: &str) -> Result<()> {
 }
 
 async fn cmd_stake(amount: &str) -> Result<()> {
-    let client = EthenaClient::new_with_signer()?;
+    let client = EthenaClient::new_with_onchainos()?;
     let amount_u256 = parse_usde_amount(amount)?;
     let data = client.stake(amount_u256).await?;
     output::success(data);
@@ -62,7 +62,7 @@ async fn cmd_stake(amount: &str) -> Result<()> {
 }
 
 async fn cmd_cooldown(amount: &str) -> Result<()> {
-    let client = EthenaClient::new_with_signer()?;
+    let client = EthenaClient::new_with_onchainos()?;
     let amount_u256 = parse_usde_amount(amount)?;
     let data = client.cooldown(amount_u256).await?;
     output::success(data);
@@ -70,7 +70,7 @@ async fn cmd_cooldown(amount: &str) -> Result<()> {
 }
 
 async fn cmd_unstake() -> Result<()> {
-    let client = EthenaClient::new_with_signer()?;
+    let client = EthenaClient::new_with_onchainos()?;
     let data = client.unstake().await?;
     output::success(data);
     Ok(())

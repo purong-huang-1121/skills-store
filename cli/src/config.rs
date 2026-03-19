@@ -4,6 +4,28 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+/// Load `~/.plugin-store/.env` into the process environment.
+/// Silently skips if the file doesn't exist or can't be read.
+/// Already-set vars are NOT overwritten (shell wins).
+pub fn load_dotenv() {
+    let Some(home) = dirs::home_dir() else { return };
+    let path = home.join(".plugin-store").join(".env");
+    let Ok(content) = fs::read_to_string(&path) else { return };
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some((key, val)) = line.split_once('=') {
+            let key = key.trim();
+            let val = val.trim().trim_matches('"').trim_matches('\'');
+            if !key.is_empty() && std::env::var(key).is_err() {
+                std::env::set_var(key, val);
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppConfig {
     #[serde(default)]
